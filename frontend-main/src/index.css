@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary-font: "Quicksand", sans-serif;
+  --secondary-font: "Urbanist", sans-serif;
+  --brandeis-blue: hsla(220, 97%, 58%, 1);
+  --white: hsla(225, 100%, 99%, 1);
+  --charcoal: hsla(221, 23%, 31%, 1);
+  --powder-blue: hsla(209, 48%, 74%, 1);
+  --alice-blue: hsla(212, 35%, 93%, 1);
+}
+* {
+  font-family: var(--primary-font);
+}

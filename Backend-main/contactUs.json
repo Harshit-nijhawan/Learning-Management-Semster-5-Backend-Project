@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "John ",
+    "email": "john@example.com",
+    "message": "I am interested in your courses."
+  },
+  {
+    "id": 2,
+    "name": "Abhishek Bhatia ",
+    "email": "abhibhatia0410@gmail.comA",
+    "message": "SasASsasAS"
+  },
+  {
+    "id": 3,
+    "name": "Abhishek Bhatia ",
+    "email": "abhibhatia0410@gmail.com",
+    "message": "Hello world!! How are you?"
+  },
+  {
+    "id": 4,
+    "name": "Abhishek Bhatia ",
+    "email": "abhibhatia0410@gmail.com",
+    "message": "Hello world\n"
+  }
+]
