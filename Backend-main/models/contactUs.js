@@ -1,17 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
 
-const contactUsFile = path.join(__dirname, '..', 'contactUs.json');
+const contactSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  message: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
 
-const readFile = () => {
-    if (!fs.existsSync(contactUsFile)) {
-        fs.writeFileSync(contactUsFile, JSON.stringify([]));
-    }
-    return JSON.parse(fs.readFileSync(contactUsFile, 'utf-8'));
-};
+// Check if model exists before compiling to prevent overwrite errors
+const ContactModel = mongoose.models.Contact || mongoose.model('Contact', contactSchema);
 
-const writeFile = (data) => {
-    fs.writeFileSync(contactUsFile, JSON.stringify(data, null, 2));
-};
-
-module.exports = { readFile, writeFile };
+module.exports = ContactModel;

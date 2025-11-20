@@ -1,16 +1,18 @@
+const dotenv = require("dotenv");
+dotenv.config(); // 👈 MUST BE THE FIRST THING
+
 const cookieParser = require("cookie-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const StudentModel = require("./models/Students");
 const { hashPassword, comparePassword } = require("./utils/passwordUtils");
+// Now these routes can access process.env because dotenv is already loaded
 const authRoutes = require("./routes/auth.routes");
 const message = require("./routes/contactUs.routes");
-const dotenv = require("dotenv");
 const connectDb = require("./utils/db");
 const protectedRoutes = require("./routes/protected.routes");
 const courseRoutes = require("./routes/course.route");
-dotenv.config();
 
 const app = express();
 app.use(cookieParser());

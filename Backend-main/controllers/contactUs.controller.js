@@ -1,25 +1,29 @@
-const { readFile, writeFile } = require('../models/contactUs');
+const ContactModel = require('../models/contactUs');
 
-const getMessages = (req, res)=>{
+const getMessages = async (req, res) => {
     try {
-        const messages = readFile();
-
-        const newMessage = {
-            id: messages.length + 1,
-            name: req.body.name,
-            email: req.body.email,
-            message: req.body.message,
+        const { name, email, message } = req.body;
+        
+        // Validate input
+        if (!name || !email || !message) {
+            return res.status(400).json({ message: "All fields are required" });
         }
 
-        messages.push(newMessage);
-        writeFile(messages);
+        // Save to MongoDB
+        const newMessage = await ContactModel.create({ 
+            name, 
+            email, 
+            message 
+        });
 
-        res.status(201).json({ message: 'Message received', data: newMessage });
+        res.status(201).json({ 
+            message: 'Message received successfully', 
+            data: newMessage 
+        });
 
     } catch (error) {
         console.error('Error saving message:', error);
-        res.status(500).json({ message: 'Error saving message' });
-
+        res.status(500).json({ message: 'Internal server error' });
     }
 }
 

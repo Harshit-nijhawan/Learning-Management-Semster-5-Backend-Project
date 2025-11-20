@@ -4,19 +4,16 @@ import {
   Routes,
   Route,
   Navigate,
-  useParams,
 } from "react-router-dom";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
 import Home from "./components/home.jsx";
 import TrendingCourses from "./components/TrendingCourses.jsx";
-import YouTubeVideos from "./components/Api.jsx";
 import BookSearch from "./components/Booksearch.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Explore from "./pages/Explore.jsx";
 import ContactUs from "./components/ContactUs.jsx";
 import RoleBasedDashboard from "./components/RoleBasedDashboard.jsx";
-import coursesData from "./utils/CourseData.js";
 import CoursePage from "./pages/CoursePage.jsx";
 import CreateCourse from "./pages/CreateCourse.jsx";
 import ShowCourses from "./pages/ShowCourses.jsx";
@@ -45,11 +42,8 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-function CoursesWrapper() {
-  const { id } = useParams();
-  const course = coursesData.find((c) => c.id === id);
-  return course ? <CoursePage course={course} /> : <h1>Course Not Found</h1>;
-}
+// REMOVED: The static CoursesWrapper function was deleted because it prevented 
+// loading new courses from the database. The Route now points directly to CoursePage.
 
 function App() {
   return (
@@ -61,6 +55,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/books" element={<BookSearch />} />
+          
           <Route
             path="/ContactUs"
             element={
@@ -69,7 +64,10 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/course/:id" element={<CoursesWrapper />} />
+
+          {/* UPDATED: Direct route to CoursePage for dynamic data fetching */}
+          <Route path="/course/:id" element={<CoursePage />} />
+
           <Route
             path="/trending"
             element={
@@ -79,17 +77,36 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/dashboard"
             element={
-              // <ProtectedRoute>
-              <RoleBasedDashboard />
-              // </ProtectedRoute>
+              <ProtectedRoute>
+                <RoleBasedDashboard />
+              </ProtectedRoute>
             }
           />
-          <Route path="/create-course" element={<CreateCourse />} />
+
+          {/* Instructor Routes */}
+          <Route 
+            path="/create-course" 
+            element={
+              <ProtectedRoute>
+                <CreateCourse />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/update-course/:id" 
+            element={
+              <ProtectedRoute>
+                <UpdateCourse />
+              </ProtectedRoute>
+            } 
+          />
+
           <Route path="/show-courses" element={<ShowCourses />} />
-          <Route path="/update-course/:id" element={<UpdateCourse />} />
+          
           <Route
             path="/user/:id"
             element={
@@ -98,6 +115,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/profile"
             element={
@@ -106,6 +124,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route path="/cart" element={<Cart />} />
         </Routes>
       </BrowserRouter>

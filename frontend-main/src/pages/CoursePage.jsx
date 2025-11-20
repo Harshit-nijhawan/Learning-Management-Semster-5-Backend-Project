@@ -1,96 +1,186 @@
-import React from "react";
-import { GoPeople } from "react-icons/go";
-import { IoMdCheckmarkCircleOutline } from "react-icons/io";
-import { PiShoppingCartLight } from "react-icons/pi";
-import { FaRupeeSign } from "react-icons/fa";
-import { Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import Navbar from "../components/Navbar";
+import { PlayCircle, FileText, BookOpen, ArrowLeft } from "lucide-react";
 
-function CoursePage({ course }) {
+function CoursePage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [course, setCourse] = useState(null);
+  const [activeChapter, setActiveChapter] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Robust helper to get a working YouTube Embed URL
+  const getEmbedUrl = (url) => {
+    if (!url) return "";
+
+    // 1. Handle raw iframe code pasted by instructor
+    if (url.includes("<iframe")) {
+        const match = url.match(/src="([^"]+)"/);
+        if (match && match[1]) return match[1];
+    }
+
+    try {
+      let videoId = "";
+      // 2. Handle standard watch URL
+      if (url.includes("youtube.com/watch")) {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        videoId = urlParams.get("v");
+      }
+      // 3. Handle shortened URL
+      else if (url.includes("youtu.be/")) {
+        videoId = url.split("youtu.be/")[1]?.split("?")[0];
+      }
+      // 4. Handle already embedded
+      else {
+        return url; 
+      }
+      // Return correct embed format
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    } catch (e) {
+      return url; 
+    }
+  };
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        // Prevent fetching if ID is garbage (like HTML)
+        if (!id || id.includes("<")) {
+             console.error("Invalid Course ID in URL");
+             navigate("/dashboard");
+             return;
+        }
+
+        const res = await api.get(`/courses/${id}`);
+        setCourse(res.data);
+        if (res.data.curriculum && res.data.curriculum.length > 0) {
+          setActiveChapter(res.data.curriculum[0]);
+        }
+      } catch (err) {
+        console.error("Error fetching course:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourse();
+  }, [id, navigate]);
+
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 text-blue-600">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+
+  if (!course)
+    return (
+      <div className="text-center mt-20 text-xl font-bold text-gray-700">
+        Course Not Found
+      </div>
+    );
+
   return (
-    <div className="bg-blue-50 p-5" style={{ fontFamily: "Inter, sans-serif" }}>
-      <div className="rounded-xl pl-5">
-        
-        <h5 className="font-bold text-xs tracking-tight text-[#0f1e2e] pl-5">{course.level}</h5>
-        <h1 className="pt-5 text-4xl font-extrabold text-[#17324e] pl-5">{course.title}</h1>
-        <h3 className="pt-3 text-gray-600 font-bold pl-5">{course.subtitle}</h3>
+    <div className="flex flex-col h-screen bg-gray-100">
+      <Navbar />
 
-        <div className="flex items-center gap-6 text-gray-600 tracking-tight font-medium pl-5">
-          <span className="inline-block pt-5">{course.rating} ({course.ratingsCount} ratings)</span>
-          <span className="flex items-center gap-2 pt-5">
-            <GoPeople className="w-5 h-5" />
-            {course.students} students
-          </span>
-        </div>
-
-        <div className="p-5 flex">
-          <span className="flex font-bold text-xl bg-green-800 text-white p-2 rounded-md">
-            <FaRupeeSign className="mt-1" />{course.price}
-          </span>
-          <span className="text-gray-600 line-through text-xl pl-3 flex pt-2 font-bold">
-            <FaRupeeSign className="mt-1" />{course.oldPrice}
-          </span>
-          <span className="ml-3 bg-red-600 p-2 rounded-md text-white font-bold text-xl">{course.discount}</span>
-        </div>
-
-        <h2 className="pt-5 font-bold text-2xl text-[#17324e] pl-5">About this Course</h2>
-        <div className="mt-4 text-gray-700 text-base leading-relaxed pl-5">{course.about}</div>
-
-        {course.videoUrl && (
-          <div className="my-6 w-full flex justify-center">
-            <iframe
-              src={course.videoUrl}
-              width={800}
-              height={450}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title="Course Video"
-              style={{ borderRadius: '12px' }}
-            ></iframe>
-          </div>
-        )}
-
-        <div className="p-5">
-          <h2 className="pt-5 font-bold text-2xl text-[#17324e]">What You'll Learn</h2>
-          <div className="grid md:grid-cols-2 gap-4 mt-5">
-            {course.skills.map((skill, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <IoMdCheckmarkCircleOutline className="text-green-500 text-xl" />
-                <p className="text-gray-700">{skill}</p>
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden mt-[60px] lg:mt-0">
+        {/* MAIN CONTENT AREA (Left) */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          
+          {/* Video Player Section */}
+          <div className="bg-black w-full aspect-video shrink-0 shadow-lg relative">
+            {activeChapter?.videoLink ? (
+              <iframe
+                src={getEmbedUrl(activeChapter.videoLink)}
+                className="w-full h-full"
+                title="Course Video"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-900">
+                <PlayCircle size={48} className="mb-2 opacity-50" />
+                <p>Select a chapter to begin learning</p>
               </div>
+            )}
+          </div>
+
+          {/* Reading Content Section */}
+          <div className="p-6 lg:p-10 max-w-5xl mx-auto w-full">
+            <div className="mb-6 border-b pb-4">
+              <h2 className="text-3xl font-bold text-gray-900">
+                {activeChapter?.chapterTitle || course.title}
+              </h2>
+            </div>
+
+            {activeChapter?.content ? (
+              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="text-xl font-semibold text-blue-700 flex items-center gap-2 mb-4">
+                  <BookOpen size={24} /> Reading Material & Notes
+                </h3>
+                <div className="prose prose-lg max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
+                  {activeChapter.content}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-dashed">
+                <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>No reading material added for this lesson.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* SIDEBAR CURRICULUM (Right) */}
+        <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col shrink-0 h-[50vh] lg:h-auto overflow-hidden">
+          <div className="p-5 bg-gray-900 text-white border-b border-gray-800 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-lg">Course Content</h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {course.curriculum?.length || 0} Chapters
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {course.curriculum?.map((chapter, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveChapter(chapter)}
+                className={`w-full text-left p-4 border-b border-gray-100 hover:bg-blue-50 transition flex gap-3 group ${
+                  activeChapter?._id === chapter._id
+                    ? "bg-blue-50 border-l-4 border-l-blue-600"
+                    : "border-l-4 border-l-transparent"
+                }`}
+              >
+                <div className="mt-0.5">
+                  {activeChapter?._id === chapter._id ? (
+                    <PlayCircle
+                      size={20}
+                      className="text-blue-600 fill-blue-100"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-gray-500 w-6 h-6 flex items-center justify-center border border-gray-300 rounded-full group-hover:border-blue-400 group-hover:text-blue-500">
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4
+                    className={`text-sm font-medium leading-snug ${
+                      activeChapter?._id === chapter._id
+                        ? "text-blue-700"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {chapter.chapterTitle}
+                  </h4>
+                </div>
+              </button>
             ))}
           </div>
-        </div>
-
-        <h2 className="pt-5 font-bold text-2xl text-[#17324e] pl-5">Requirements</h2>
-        <ul className="mt-4 text-gray-700 text-base leading-relaxed pl-5 list-disc list-inside space-y-2 pb-5">
-          {course.requirements.map((req, i) => (
-            <li key={i}>{req}</li>
-          ))}
-        </ul>
-
-        <h2 className="pt-5 pb-3 font-bold text-2xl text-[#17324e] pl-5">Student Reviews</h2>
-        <div className="pl-5">
-          {course.reviews.map((r, idx) => (
-            <div key={idx} className="flex items-center gap-4 mb-6 bg-white rounded-lg shadow p-4">
-              <img src={r.image} alt={r.name} className="w-14 h-14 rounded-full object-cover border" />
-              <div>
-                <h4 className="font-bold text-lg text-[#17324e]">{r.name}</h4>
-                <div className="flex items-center mb-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400 mr-1" />
-                  ))}
-                </div>
-                <p className="text-gray-700">{r.comment}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="p-5">
-          <button className="hover:bg-blue-900 cursor-pointer w-full bg-blue-700 rounded-md text-xl font-bold text-white py-2 flex items-center justify-center gap-2">
-            <PiShoppingCartLight /> Add To Cart
-          </button>
         </div>
       </div>
     </div>

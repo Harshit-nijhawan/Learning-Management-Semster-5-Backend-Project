@@ -28,6 +28,7 @@ const instructorList = async (req, res) => {
     res.status(500).json({ message: "Error fetching instructor list" });
   }
 };
+
 const updateUserRole = async (req, res) => {
   try {
     const { userId, newRole } = req.body;
@@ -66,25 +67,23 @@ const enrollInCourse = async (req, res) => {
 
 const getEnrolledCourses = async (req, res) => {
   try {
-    const userId = req.user._id; // Get user ID from auth middleware (MongoDB uses _id)
+    const userId = req.user._id;
     console.log("Fetching courses for user:", userId);
 
     const student = await StudentModel.findById(userId).populate({
       path: "purchasedCourses",
       populate: {
         path: "instructor",
-        select: "name email", // Only get instructor name and email
+        select: "name email",
       },
+      // Ensure 'curriculum' is selected
+      select: "title description image price rating instructor curriculum" 
     });
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    console.log(
-      "Found student with purchased courses:",
-      student.purchasedCourses.length
-    );
     res.status(200).json(student.purchasedCourses);
   } catch (error) {
     console.error("Error fetching enrolled courses:", error);
@@ -116,49 +115,25 @@ const getUserById = async (req, res) => {
 
 const addPurchasedCourses = async (req, res) => {
   try {
-    console.log("addPurchasedCourses called");
-    console.log("Params:", req.params);
-    console.log("Body:", req.body);
-    console.log("User from auth:", req.user);
-
     const studentId = req.params.id;
     const { courseIds } = req.body;
 
-    console.log("Student ID:", studentId);
-    console.log("Course IDs to purchase:", courseIds);
-
     const student = await StudentModel.findById(studentId);
     if (!student) {
-      console.log("Student not found for ID:", studentId);
       return res.status(404).json({ message: "Student not found" });
     }
 
-    console.log("Student found:", student.name);
-    console.log("Current purchased courses:", student.purchasedCourses);
-    console.log("Current cart:", student.cart);
-
-    // Avoid duplicates
     const newCourses = courseIds.filter(
       (id) => !student.purchasedCourses.includes(id)
     );
-    console.log("New courses to add:", newCourses);
 
     student.purchasedCourses.push(...newCourses);
 
-    // Remove purchased courses from cart
-    const originalCartLength = student.cart.length;
     student.cart = student.cart.filter(
       (cartItemId) => cartItemId && !courseIds.includes(cartItemId.toString())
     );
-    console.log(
-      "Cart before save - removed",
-      originalCartLength - student.cart.length,
-      "items"
-    );
-    console.log("Cart after removal:", student.cart);
 
     await student.save();
-    console.log("Student saved successfully");
 
     res.status(200).json({
       message: "Courses purchased and removed from cart",
@@ -181,7 +156,6 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent deletion of admin users
     if (user.role === "admin") {
       return res.status(403).json({ message: "Cannot delete admin users" });
     }
@@ -190,17 +164,12 @@ const deleteUser = async (req, res) => {
 
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    console.error("Error deleting user:", error);
     res.status(500).json({ message: "Error deleting user" });
   }
 };
 
-// Cart management functions
 const testAuth = async (req, res) => {
   try {
-    console.log("testAuth called");
-    console.log("req.user:", req.user);
-    console.log("req.user._id:", req.user._id);
     res.status(200).json({
       message: "Authentication working",
       user: {
@@ -211,22 +180,14 @@ const testAuth = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in testAuth:", error);
-    res
-      .status(500)
-      .json({ message: "Error in testAuth", error: error.message });
+    res.status(500).json({ message: "Error in testAuth", error: error.message });
   }
 };
 
 const getCart = async (req, res) => {
   try {
-    console.log("getCart called, req.user:", req.user);
     const userId = req.user._id;
-    console.log("Fetching cart for userId:", userId);
-
     const student = await StudentModel.findById(userId).populate("cart");
-    console.log("Student found:", student ? "Yes" : "No");
-    console.log("Cart items:", student?.cart?.length || 0);
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
@@ -234,59 +195,39 @@ const getCart = async (req, res) => {
 
     res.status(200).json(student.cart);
   } catch (error) {
-    console.error("Error fetching cart:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching cart", error: error.message });
+    res.status(500).json({ message: "Error fetching cart", error: error.message });
   }
 };
 
 const addToCart = async (req, res) => {
   try {
-    console.log("addToCart called, req.user:", req.user);
-    console.log("addToCart body:", req.body);
-
     const userId = req.user._id;
     const { courseId } = req.body;
 
-    console.log("Adding course", courseId, "to cart for user", userId);
-
     const student = await StudentModel.findById(userId);
     if (!student) {
-      console.log("Student not found for userId:", userId);
       return res.status(404).json({ message: "Student not found" });
     }
 
-    console.log("Student found, current cart:", student.cart);
-    console.log("Student purchased courses:", student.purchasedCourses);
-
-    // Check if course is already in cart
     if (student.cart.includes(courseId)) {
       return res.status(400).json({ message: "Course already in cart" });
     }
 
-    // Check if course is already purchased
     if (student.purchasedCourses.includes(courseId)) {
       return res.status(400).json({ message: "Course already purchased" });
     }
 
     student.cart.push(courseId);
     await student.save();
-    console.log("Course added to cart, new cart:", student.cart);
 
-    // Return populated cart
     const updatedStudent = await StudentModel.findById(userId).populate("cart");
-    console.log("Populated cart:", updatedStudent.cart);
 
     res.status(200).json({
       message: "Course added to cart",
       cart: updatedStudent.cart,
     });
   } catch (error) {
-    console.error("Error adding to cart:", error);
-    res
-      .status(500)
-      .json({ message: "Error adding to cart", error: error.message });
+    res.status(500).json({ message: "Error adding to cart", error: error.message });
   }
 };
 
@@ -303,14 +244,12 @@ const removeFromCart = async (req, res) => {
     student.cart = student.cart.filter((id) => id.toString() !== courseId);
     await student.save();
 
-    // Return populated cart
     const updatedStudent = await StudentModel.findById(userId).populate("cart");
     res.status(200).json({
       message: "Course removed from cart",
       cart: updatedStudent.cart,
     });
   } catch (error) {
-    console.error("Error removing from cart:", error);
     res.status(500).json({ message: "Error removing from cart" });
   }
 };

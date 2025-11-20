@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; 
+// FIX: Enforce environment variable presence
+if (!process.env.JWT_SECRET) {
+    throw new Error("FATAL ERROR: JWT_SECRET is not defined in .env file");
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateToken = (userId) => {
     return jwt.sign({ id: userId }, JWT_SECRET, {

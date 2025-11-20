@@ -1,8 +1,11 @@
 import axios from "axios";
 import { getCookie, deleteCookie, getToken } from "./cookieUtils";
 
+// FIX: Use environment variable
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:3001/api/auth",
+  baseURL: BASE_URL, // Now points to /api, not /api/auth
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,16 +28,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log("API Error:", error.response?.status, error.config?.url);
-
     if (error.response?.status === 401) {
-      console.log("401 Unauthorized - clearing auth data");
       deleteCookie("token");
       deleteCookie("user");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-
-      // Only redirect if not already on login page
+      
       if (!window.location.pathname.includes("/login")) {
         window.location.href = "/login";
       }

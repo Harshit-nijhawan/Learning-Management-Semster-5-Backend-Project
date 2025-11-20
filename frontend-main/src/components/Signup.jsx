@@ -52,7 +52,7 @@ function Signup() {
       // Log the data being sent
       console.log('Sending registration data:', { name, email, number, password, role });
 
-      const response = await api.post('/register', {
+      const response = await api.post('/auth/register', {
         name,
         email,
         number,
