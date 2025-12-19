@@ -35,7 +35,7 @@ function Login() {
     try {
       console.log("Sending request with:", { email, password });
 
-      const response = await api.post('/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email,
         password,
       });
@@ -63,7 +63,7 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 transition-colors p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-2xl p-8 space-y-6">
         <h2 className="text-3xl font-bold text-center text-gray-800 tracking-wide">
           Login to Learnify
@@ -87,7 +87,7 @@ function Login() {
                 name="email"
                 placeholder="Enter your email"
                 value={email} // controlled input ✅
-                className={`w-full pl-10 px-4 py-2 border rounded-md focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+                className={`w-full pl-10 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
                   ${errors.email ? "border-red-600" : "border-gray-300"}`}
                 onChange={(e) => setemail(e.target.value)}
                 onFocus={() => seterrors((prev) => ({ ...prev, email: "" }))}
@@ -116,7 +116,7 @@ function Login() {
                 name="password"
                 placeholder="Enter your password"
                 value={password} // controlled input ✅
-                className={`w-full pl-10 pr-12 px-4 py-2 border rounded-md focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+                className={`w-full pl-10 pr-12 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
                   ${errors.password ? "border-red-500" : "border-gray-300"}`}
                 onChange={(e) => setpassword(e.target.value)}
                 onFocus={() =>

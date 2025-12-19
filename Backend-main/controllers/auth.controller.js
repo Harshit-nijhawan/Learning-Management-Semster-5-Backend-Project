@@ -44,17 +44,17 @@ const register = async (req, res) => {
     const { name, email, password, number, role } = req.body;
 
     const errors = {};
-    if (!name) errors.name = "Name is required";
-    if (!email) errors.email = "Email is required";
-    if (!password) errors.password = "Password is required";
-    if (!number) errors.number = "Phone number is required";
+    if (!name || name.trim().length < 2) errors.name = "Name must be at least 2 characters";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Valid email is required";
+    if (!password || password.length < 6) errors.password = "Password must be at least 6 characters";
+    if (!number || !/^\d{10,}$/.test(number)) errors.number = "Valid phone number is required (10+ digits)";
     if (!role || !["student", "instructor"].includes(role))
       errors.role = "Role must be student or instructor";
 
     if (Object.keys(errors).length > 0) {
       console.log("Validation errors:", errors);
       return res.status(400).json({
-        message: "All fields are required",
+        message: "Validation failed",
         errors,
       });
     }
@@ -66,8 +66,8 @@ const register = async (req, res) => {
 
     const hashedPassword = await hashPassword(password);
     const newStudent = await StudentModel.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
       number,
       role,

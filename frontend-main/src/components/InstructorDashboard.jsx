@@ -9,10 +9,12 @@ import {
   CircleUser,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import DashCard from "./DashCard";
 import InstructorCourseList from "./InstructorCourseList";
-import axios from "axios";
+import UserList from "./UserList";
+import api from "../utils/api";
+import { getToken } from "../utils/cookieUtils";
 
 function InstructorDashboard() {
   const { user, logout } = useAuth();
@@ -25,26 +27,18 @@ function InstructorDashboard() {
   useEffect(() => {
     const fetchCourseCount = async () => {
       try {
-        const token =
-          localStorage.getItem("token") ||
-          document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("token="))
-            ?.split("=")[1];
+        const token = getToken();
 
         if (!token) {
           setLoading(false);
           return;
         }
 
-        const response = await axios.get(
-          "http://localhost:3001/api/my-courses",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get("/api/my-courses", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         setCourseCount(response.data.length);
       } catch (error) {
@@ -93,7 +87,7 @@ function InstructorDashboard() {
   ];
 
   return (
-    <div className="flex">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar>
         <SidebarItem
           icon={<LayoutDashboard size={20} />}
@@ -107,8 +101,18 @@ function InstructorDashboard() {
           active={activeSection === "courses"}
           onClick={() => setActiveSection("courses")}
         />
-        <SidebarItem icon={<Users size={20} />} text="Students" />
-        <SidebarItem icon={<MessageSquare size={20} />} text="Messages" />
+        <SidebarItem 
+          icon={<Users size={20} />} 
+          text="Students"
+          active={activeSection === "students"}
+          onClick={() => setActiveSection("students")}
+        />
+        <SidebarItem 
+          icon={<MessageSquare size={20} />} 
+          text="Messages"
+          active={activeSection === "messages"}
+          onClick={() => setActiveSection("messages")}
+        />
         <hr className="text-zinc-200" />
         <SidebarItem
           icon={<CircleUser size={20} />}
@@ -121,14 +125,16 @@ function InstructorDashboard() {
           onClick={handleLogout}
         />
       </Sidebar>
-      <main className="flex-1 p-6 bg-gray-50 ml-60 min-h-screen">
+      <main className="flex-1 p-6 bg-white ml-60 min-h-screen">
         {activeSection === "dashboard" && (
           <>
-            <h1 className="text-3xl font-bold">
-              Welcome back, {user?.name || "Instructor"}
-            </h1>
-            <p>Here's your teaching overview and recent activity.</p>
-            <div className="flex flex-wrap w-full gap-5 mt-10 ml-4">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {user?.name || "Instructor"}
+              </h1>
+              <p className="text-gray-600 mt-2">Here's your teaching overview and recent activity.</p>
+            </div>
+            <div className="flex flex-wrap w-full gap-5 mt-10">
               {dashData.map((data, index) => (
                 <DashCard
                   key={index}
@@ -139,9 +145,56 @@ function InstructorDashboard() {
                 />
               ))}
             </div>
+            
+            {/* Quick Actions */}
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => navigate('/create-course')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                >
+                  <BookOpen size={20} />
+                  Create New Course
+                </button>
+                <button
+                  onClick={() => setActiveSection('courses')}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                >
+                  <BookOpen size={20} />
+                  View My Courses
+                </button>
+              </div>
+            </div>
           </>
         )}
-        {activeSection === "courses" && <InstructorCourseList />}
+        {activeSection === "courses" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">My Courses</h1>
+              <button
+                onClick={() => navigate('/create-course')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              >
+                <BookOpen size={20} />
+                Create New Course
+              </button>
+            </div>
+            <InstructorCourseList />
+          </div>
+        )}
+        {activeSection === "students" && (
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">My Students</h1>
+            <UserList type="student" showDelete={false} />
+          </div>
+        )}
+        {activeSection === "messages" && (
+          <div className="mt-10 ml-4">
+            <h2 className="text-3xl font-bold text-blue-700 mb-6">Messages</h2>
+            <p className="text-gray-600">Coming soon...</p>
+          </div>
+        )}
       </main>
     </div>
   );

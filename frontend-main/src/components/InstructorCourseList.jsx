@@ -89,7 +89,7 @@ function InstructorCourseList() {
           {courses.map((course) => (
             <div
               key={course._id}
-              className="border rounded-lg p-4 hover:shadow-md transition"
+              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-gray-50"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -115,7 +115,7 @@ function InstructorCourseList() {
                   <img
                     src={`http://localhost:3001/images/${course.image}`}
                     alt={course.title}
-                    className="w-24 h-24 object-cover rounded-lg ml-4"
+                    className="w-24 h-24 object-cover rounded-lg ml-4 border border-gray-200"
                   />
                 )}
               </div>

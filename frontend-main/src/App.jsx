@@ -7,10 +7,11 @@ import {
 } from "react-router-dom";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
-import Home from "./components/home.jsx";
+import EnhancedHome from "./pages/EnhancedHome.jsx";
 import TrendingCourses from "./components/TrendingCourses.jsx";
 import BookSearch from "./components/Booksearch.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Explore from "./pages/Explore.jsx";
 import ContactUs from "./components/ContactUs.jsx";
 import RoleBasedDashboard from "./components/RoleBasedDashboard.jsx";
@@ -20,6 +21,12 @@ import ShowCourses from "./pages/ShowCourses.jsx";
 import UpdateCourse from "./pages/Updatecourse";
 import UserProfile from "./pages/UserProfile";
 import Cart from "./pages/Cart";
+import ArticlePage from "./pages/ArticlePage.jsx";
+import ProblemPage from "./pages/ProblemPage.jsx";
+import Articles from "./pages/Articles.jsx";
+import Problems from "./pages/Problems.jsx";
+import LearningPaths from "./pages/LearningPaths.jsx";
+import DailyQuestion from "./pages/DailyQuestion.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { token, isLoading } = useAuth();
@@ -47,12 +54,13 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<EnhancedHome />} />
+            <Route path="/register" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/books" element={<BookSearch />} />
           
@@ -126,9 +134,27 @@ function App() {
           />
           
           <Route path="/cart" element={<Cart />} />
+          
+          {/* GFG-Style Features */}
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/articles/:slug" element={<ArticlePage />} />
+          <Route path="/problems" element={<Problems />} />
+          <Route path="/problems/:slug" element={<ProblemPage />} />
+          <Route path="/paths" element={<LearningPaths />} />
+          
+          {/* Daily Coding Challenge */}
+          <Route 
+            path="/daily-question" 
+            element={
+              <ProtectedRoute>
+                <DailyQuestion />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 

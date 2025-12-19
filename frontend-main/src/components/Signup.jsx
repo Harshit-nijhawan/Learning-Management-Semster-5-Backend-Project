@@ -52,7 +52,7 @@ function Signup() {
       // Log the data being sent
       console.log('Sending registration data:', { name, email, number, password, role });
 
-      const response = await api.post('/auth/register', {
+      const response = await api.post('/api/auth/register', {
         name,
         email,
         number,
@@ -82,7 +82,7 @@ function Signup() {
     }
     }
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100'>
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 transition-colors'>
       <div className='max-w-md w-full bg-white rounded-lg shadow-2xl p-8 space-y-6'>
         <h2 className='text-3xl font-bold text-center text-gray-800 tracking-wide'>
           Welcome to Learnify
@@ -98,12 +98,12 @@ function Signup() {
               </div>
             <input 
               type="text" 
-              id="name"
+              id='name'
               name='name'
-              placeholder='Enter your name'
+              placeholder='Enter your Full Name'
               value={name}
-              className={`w-full pl-10 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1B3C53] focus:border-[#1B3C53] outline-none transition duration-150'
-                ${errors.name ? 'border-red-600' : 'border-gray-400'}`}
+              className={`w-full pl-10 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+                    ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
               onChange={(e)=>setname(e.target.value)}
               onFocus={() => seterrors(prev => ({...prev, name: ""}))}
             />
@@ -121,12 +121,12 @@ function Signup() {
               </div>
             <input 
               type="email" 
-              id="email"
+              id='email'
               name='email'
-              placeholder='Enter your email'
+              placeholder='Enter your Email'
               value={email}
-              className={`w-full pl-10 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1B3C53] focus:border-[#1B3C53] outline-none transition duration-150'
-                ${errors.email ? 'border-red-600' : 'border-gray-400'}`}
+              className={`w-full pl-10 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+                    ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
               onChange={(e)=>setemail(e.target.value)}
               onFocus={() => seterrors(prev => ({...prev, email: ""}))}
             />
@@ -148,7 +148,7 @@ function Signup() {
               name='number'
               placeholder='Enter your phone number'
               value={number === undefined ? '' : number}
-              className={`w-full pl-10 px-4 py-2 border rounded-md focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+              className={`w-full pl-10 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
                     ${errors.number ? 'border-red-500' : 'border-gray-300'}`}
               onChange={(e)=>setnumber(e.target.value)}
               onFocus={() => seterrors(prev => ({...prev, number: ""}))}
@@ -171,7 +171,7 @@ function Signup() {
               name='password'
               placeholder='Enter your password'
               value={password}
-              className={`w-full pl-10 pr-12 px-4 py-2 border rounded-md focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
+              className={`w-full pl-10 pr-12 px-4 py-2 border rounded-md bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1B3C53] outline-none transition duration-150 
                     ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
               onChange={(e)=>setpassword(e.target.value)}
               onFocus={() => seterrors(prev => ({...prev, password: ""}))}
@@ -202,7 +202,7 @@ function Signup() {
               name="role"
               value={role}
               onChange={e => setrole(e.target.value)}
-              className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1B3C53] focus:border-[#1B3C53] outline-none transition duration-150'
+              className='w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-[#1B3C53] focus:border-[#1B3C53] outline-none transition duration-150'
             >
               <option value="student">Student</option>
               <option value="instructor">Instructor</option>

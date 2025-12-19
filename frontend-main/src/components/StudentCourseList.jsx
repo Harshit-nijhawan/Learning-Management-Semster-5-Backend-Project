@@ -11,7 +11,7 @@ function StudentCourseList() {
   useEffect(() => {
     const fetchPurchasedCourses = async () => {
       try {
-        const response = await api.get("/protected/student/courses");
+        const response = await api.get("/api/protected/student/courses");
         setCourses(response.data);
       } catch (err) {
         console.error("Error fetching purchased courses:", err);
@@ -93,7 +93,7 @@ function StudentCourseList() {
             You haven't enrolled in any courses yet.
           </p>
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium cursor-pointer"
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium cursor-pointer transition-colors"
             onClick={() => navigate("/show-courses")}
           >
             Explore Courses

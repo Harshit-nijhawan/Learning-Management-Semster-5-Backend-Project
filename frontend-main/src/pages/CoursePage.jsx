@@ -53,7 +53,7 @@ function CoursePage() {
              return;
         }
 
-        const res = await api.get(`/courses/${id}`);
+        const res = await api.get(`/api/courses/${id}`);
         setCourse(res.data);
         if (res.data.curriculum && res.data.curriculum.length > 0) {
           setActiveChapter(res.data.curriculum[0]);

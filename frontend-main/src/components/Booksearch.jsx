@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { Mic, MicOff } from "lucide-react";
 
 export default function BookSearch() {
   const [books, setBooks] = useState([]);
   const [search, setSearch] = useState("programming");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const fetchBooks = async (query) => {
     setLoading(true);
@@ -29,19 +31,79 @@ export default function BookSearch() {
     fetchBooks(search);
   };
 
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Your browser does not support speech recognition.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setSearch(transcript);
+      fetchBooks(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech Error:", event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert("Please allow microphone access.");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1 style={{ textAlign: "center" }}>Book Search</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", justifyContent: "center", margin: "20px 0" }}>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search books..."
-          style={{ padding: "8px", width: "250px", borderRadius: "4px 0 0 4px", border: "1px solid #ccc" }}
-        />
-        <button type="submit" style={{ padding: "8px 12px", border: "none", background: "#007BFF", color: "#fff", borderRadius: "0 4px 4px 0" }}>
-          Search
+      <form onSubmit={handleSubmit} style={{ display: "flex", justifyContent: "center", margin: "20px 0", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex" }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search books..."
+            style={{ padding: "8px", width: "250px", borderRadius: "4px 0 0 4px", border: "1px solid #ccc" }}
+          />
+          <button type="submit" style={{ padding: "8px 12px", border: "none", background: "#007BFF", color: "#fff", borderRadius: "0 4px 4px 0" }}>
+            Search
+          </button>
+        </div>
+        
+        <button 
+          type="button" 
+          onClick={handleVoiceSearch}
+          style={{ 
+            padding: "8px", 
+            borderRadius: "50%", 
+            border: "none", 
+            background: isListening ? "#dc3545" : "#28a745", 
+            color: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+          title="Voice Search"
+        >
+          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
         </button>
       </form>
 

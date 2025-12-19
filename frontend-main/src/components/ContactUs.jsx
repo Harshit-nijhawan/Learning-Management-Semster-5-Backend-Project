@@ -148,7 +148,7 @@ function ContactUs() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       errors.name
                         ? "border-red-500 bg-red-50"
                         : "border-gray-300 hover:border-gray-400"
@@ -179,7 +179,7 @@ function ContactUs() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       errors.email
                         ? "border-red-500 bg-red-50"
                         : "border-gray-300 hover:border-gray-400"
@@ -210,7 +210,7 @@ function ContactUs() {
                     rows={5}
                     value={formData.message}
                     onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none ${
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none ${
                       errors.message
                         ? "border-red-500 bg-red-50"
                         : "border-gray-300 hover:border-gray-400"
@@ -258,7 +258,7 @@ function ContactUs() {
               Need immediate assistance? Email us at{" "}
               <a
                 href="mailto:support@company.com"
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium">
               >
                 support@company.com
               </a>

@@ -18,10 +18,9 @@ const courseSchema = new mongoose.Schema({
       content: { type: String, required: true }    // Reading Material/Notes
     }
   ],
-  createdAt: { type: Date, default: Date.now },
-  rating: { type: Number, default: 0 },
-  studentsEnrolled: { type: Number, default: 0 },
-});
+  rating: { type: Number, default: 0, min: 0, max: 5 },
+  studentsEnrolled: { type: Number, default: 0, min: 0 },
+}, { timestamps: true }); // Auto-manage createdAt and updatedAt
 
 const CourseModel = mongoose.model("Course", courseSchema);
 module.exports = CourseModel;

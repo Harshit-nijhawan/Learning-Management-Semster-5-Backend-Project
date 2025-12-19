@@ -1,10 +1,12 @@
 import { ChevronFirst, ChevronLast, MoreVertical } from "lucide-react";
 import React, { createContext, useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const SidebarContext = createContext();
 
 export default function Sidebar({ children }) {
   const [expanded, setExpanded] = useState(true);
+  const navigate = useNavigate();
 
   return (
     <aside className="fixed top-0 left-0 h-screen z-30">
@@ -12,7 +14,8 @@ export default function Sidebar({ children }) {
         {/* Header */}
         <div className="p-4 pb-2 flex justify-between items-center">
           <h1
-            className={`text-[30px] font-bold text-blue-600 transition-all overflow-hidden ${
+            onClick={() => navigate('/')}
+            className={`text-[30px] font-bold text-blue-600 transition-all overflow-hidden cursor-pointer hover:text-blue-700 ${
               expanded ? "w-32 opacity-100" : "w-0 opacity-0"
             }`}
           >
@@ -20,7 +23,7 @@ export default function Sidebar({ children }) {
           </h1>
           <button
             onClick={() => setExpanded((curr) => !curr)}
-            className="p-1.5 rounded-md bg-gray-50 hover:bg-gray-100 transition"
+            className="p-1.5 rounded-md bg-gray-50 hover:bg-gray-100 transition text-gray-700"
           >
             {expanded ? <ChevronFirst /> : <ChevronLast />}
           </button>
@@ -39,7 +42,7 @@ export default function Sidebar({ children }) {
             }`}
           >
             <div className="leading-4">
-              <h4 className="font-semibold">Learnify</h4>
+              <h4 className="font-semibold text-gray-900">Learnify</h4>
               <span className="text-xs text-gray-500">learnify@gmail.com</span>
             </div>
             <MoreVertical size={20} className="text-gray-600" />

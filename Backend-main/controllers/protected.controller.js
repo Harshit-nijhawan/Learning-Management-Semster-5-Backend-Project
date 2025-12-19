@@ -118,19 +118,26 @@ const addPurchasedCourses = async (req, res) => {
     const studentId = req.params.id;
     const { courseIds } = req.body;
 
+    // Validate input
+    if (!courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
+      return res.status(400).json({ message: "Invalid courseIds: must be a non-empty array" });
+    }
+
     const student = await StudentModel.findById(studentId);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // Fix: Proper ObjectId comparison
     const newCourses = courseIds.filter(
-      (id) => !student.purchasedCourses.includes(id)
+      (id) => !student.purchasedCourses.some(purchasedId => purchasedId.toString() === id.toString())
     );
 
     student.purchasedCourses.push(...newCourses);
 
+    // Fix: Proper ObjectId comparison for cart filtering
     student.cart = student.cart.filter(
-      (cartItemId) => cartItemId && !courseIds.includes(cartItemId.toString())
+      (cartItemId) => cartItemId && !courseIds.some(courseId => courseId.toString() === cartItemId.toString())
     );
 
     await student.save();
@@ -204,16 +211,21 @@ const addToCart = async (req, res) => {
     const userId = req.user._id;
     const { courseId } = req.body;
 
+    if (!courseId) {
+      return res.status(400).json({ message: "Course ID is required" });
+    }
+
     const student = await StudentModel.findById(userId);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    if (student.cart.includes(courseId)) {
+    // Fix: Proper ObjectId comparison
+    if (student.cart.some(id => id.toString() === courseId.toString())) {
       return res.status(400).json({ message: "Course already in cart" });
     }
 
-    if (student.purchasedCourses.includes(courseId)) {
+    if (student.purchasedCourses.some(id => id.toString() === courseId.toString())) {
       return res.status(400).json({ message: "Course already purchased" });
     }
 

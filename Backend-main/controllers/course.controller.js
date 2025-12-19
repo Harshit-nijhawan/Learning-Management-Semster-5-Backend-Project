@@ -4,6 +4,17 @@ const createCourse = async (req, res) => {
   try {
     let { title, description, price, curriculum } = req.body;
     
+    // Validation
+    if (!title || title.trim().length < 3) {
+      return res.status(400).json({ message: "Title must be at least 3 characters" });
+    }
+    if (!description || description.trim().length < 10) {
+      return res.status(400).json({ message: "Description must be at least 10 characters" });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+    
     // Parse if sent as string (FormData limitation)
     if (typeof curriculum === 'string') {
         try {
@@ -13,11 +24,9 @@ const createCourse = async (req, res) => {
         }
     }
 
-    if (!req.file) return res.status(400).json({ message: "Image is required" });
-
     const newCourse = await Course.create({
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       image: req.file.filename,
       price: price || 0,
       instructor: req.user._id,

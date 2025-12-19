@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { CheckCircle, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { getToken } from "../utils/cookieUtils";
+import api from "../utils/api";
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -15,29 +15,13 @@ function Cart() {
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        const token = getToken();
-        if (!token || !user) {
+        if (!user) {
           setLoading(false);
           return;
         }
 
-        const response = await fetch(
-          "http://localhost:3001/api/protected/cart",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.ok) {
-          const cartData = await response.json();
-          setCart(cartData);
-        } else {
-          console.error("Failed to fetch cart");
-          setCart([]);
-        }
+        const response = await api.get("/api/protected/cart");
+        setCart(response.data);
       } catch (error) {
         console.error("Error fetching cart:", error);
         setCart([]);
@@ -53,24 +37,8 @@ function Cart() {
 
   const handleRemove = async (courseId) => {
     try {
-      const token = getToken();
-      const response = await fetch(
-        `http://localhost:3001/api/protected/cart/${courseId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
-      } else {
-        alert("Failed to remove course from cart");
-      }
+      const response = await api.delete(`/api/protected/cart/${courseId}`);
+      setCart(response.data.cart);
     } catch (error) {
       console.error("Error removing from cart:", error);
       alert("Error removing course from cart");
@@ -96,57 +64,24 @@ function Cart() {
     });
 
     try {
-      const token = getToken();
-      console.log("Token for purchase:", token ? "Found" : "Not found");
+      const response = await api.post(`/api/protected/user/${userId}/purchase`, {
+        courseIds,
+      });
 
-      const response = await fetch(
-        `http://localhost:3001/api/protected/user/${userId}/purchase`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ courseIds }),
-        }
-      );
+      console.log("Purchase response data:", response.data);
 
-      console.log("Purchase response status:", response.status);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
 
-      const data = await response.json();
-      console.log("Purchase response data:", data);
+      console.log("Purchase successful, fetching updated cart...");
 
-      if (response.ok) {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-
-        console.log("Purchase successful, fetching updated cart...");
-
-        // Cart will be automatically cleared by backend, so fetch updated cart
-        const cartResponse = await fetch(
-          "http://localhost:3001/api/protected/cart",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (cartResponse.ok) {
-          const updatedCart = await cartResponse.json();
-          console.log("Updated cart after purchase:", updatedCart);
-          setCart(updatedCart);
-        } else {
-          console.error("Failed to fetch updated cart:", cartResponse.status);
-        }
-      } else {
-        console.error("Purchase failed:", data);
-        alert("Error: " + (data.message || "Purchase failed"));
-      }
+      // Fetch updated cart
+      const cartResponse = await api.get("/api/protected/cart");
+      console.log("Updated cart after purchase:", cartResponse.data);
+      setCart(cartResponse.data);
     } catch (error) {
-      console.error("Network error during purchase:", error);
-      alert("Network error: " + error.message);
+      console.error("Purchase error:", error);
+      alert("Error: " + (error.response?.data?.message || "Purchase failed"));
     }
   };
 
@@ -186,7 +121,7 @@ function Cart() {
                       className="flex items-center justify-between border-b pb-4 mb-4"
                     >
                       <div>
-                        <h3 className="font-bold text-lg">{course.title}</h3>
+                        <h3 className="font-bold text-lg text-gray-900">{course.title}</h3>
                         <p className="text-gray-600 text-sm">
                           {course.description && course.description.length > 100
                             ? `${course.description.substring(0, 100)}...`
@@ -197,7 +132,7 @@ function Cart() {
                         </span>
                       </div>
                       <button
-                        className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
+                        className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded font-semibold flex items-center gap-2 transition"
                         onClick={() => handleRemove(course._id)}
                       >
                         <Trash2 size={18} />

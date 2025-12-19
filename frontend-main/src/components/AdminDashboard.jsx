@@ -10,11 +10,11 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import DashCard from "./DashCard";
 import UserList from "./UserList";
 import CourseList from "./CourseList";
-import axios from "axios";
+import api from "../utils/api";
 
 function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -28,18 +28,18 @@ function AdminDashboard() {
 
   useEffect(() => {
     // Fetch students count
-    axios
-      .get("http://localhost:3001/api/protected/students")
+    api
+      .get("/api/protected/students")
       .then((res) => setStudentCount(res.data.length))
       .catch(() => setStudentCount(0));
     // Fetch instructors count
-    axios
-      .get("http://localhost:3001/api/protected/instructors")
+    api
+      .get("/api/protected/instructors")
       .then((res) => setInstructorCount(res.data.length))
       .catch(() => setInstructorCount(0));
     // Fetch courses count
-    axios
-      .get("http://localhost:3001/api/allCourses")
+    api
+      .get("/api/allCourses")
       .then((res) => {
         if (Array.isArray(res.data)) {
           setCourseCount(res.data.length);
@@ -78,7 +78,7 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="flex">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar>
         <SidebarItem
           icon={<LayoutDashboard size={20} />}
@@ -122,8 +122,8 @@ function AdminDashboard() {
           onClick={handleLogout}
         />
       </Sidebar>
-      <main className="flex-1 p-6 bg-gray-50 min-h-screen ml-60">
-        <h1 className="text-3xl font-bold">Welcome back, Admin</h1>
+      <main className="flex-1 p-6 bg-white min-h-screen ml-60">
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back, Admin</h1>
         {/* Conditional rendering based on activeSection */}
         {activeSection === "dashboard" && (
           <div className="flex flex-wrap w-full gap-5 mt-10 ml-4">

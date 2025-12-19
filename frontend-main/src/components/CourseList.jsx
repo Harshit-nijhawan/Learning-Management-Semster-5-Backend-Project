@@ -76,11 +76,11 @@ function CourseList({ showEdit = true }) {
                 key={course._id || idx}
                 className="border-t hover:bg-blue-50 transition"
               >
-                <td className="py-3 px-4 font-semibold">{course.title}</td>
+                <td className="py-3 px-4 font-semibold text-gray-900">{course.title}</td>
                 <td className="py-3 px-4 text-blue-600 font-bold">
                   ₹{course.price}
                 </td>
-                <td className="py-3 px-4">{course.rating ?? "N/A"}</td>
+                <td className="py-3 px-4 text-gray-600">{course.rating ?? "N/A"}</td>
                 <td className="py-3 px-4 flex justify-center gap-4">
                   {showEdit && (
                     <button

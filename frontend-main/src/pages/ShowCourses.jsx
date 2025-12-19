@@ -3,7 +3,7 @@ import { Star, Clock } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
-import { getToken } from "../utils/cookieUtils";
+import api from "../utils/api";
 
 function ShowCourses() {
   const [courses, setCourses] = useState([]);
@@ -17,10 +17,8 @@ function ShowCourses() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const coursesResponse = await fetch(
-          "http://localhost:3001/api/allCourses"
-        );
-        const coursesData = await coursesResponse.json();
+        const coursesResponse = await api.get("/api/allCourses");
+        const coursesData = coursesResponse.data;
 
         if (Array.isArray(coursesData)) {
           setCourses(coursesData);
@@ -30,25 +28,14 @@ function ShowCourses() {
           setCourses([]);
         }
 
-        if (user) {
+        if (user && user.role === "student") {
           try {
-            const token = getToken();
-            const cartResponse = await fetch(
-              "http://localhost:3001/api/protected/cart",
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-
-            if (cartResponse.ok) {
-              const cartData = await cartResponse.json();
-              setCart(cartData);
-            }
+            const cartResponse = await api.get("/api/protected/cart");
+            setCart(cartResponse.data);
           } catch (cartError) {
             console.error("Error fetching cart:", cartError);
+            // If cart fetch fails, set to empty array
+            setCart([]);
           }
         }
       } catch (error) {
@@ -66,8 +53,19 @@ function ShowCourses() {
   }, [cart]);
 
   const handleAddToCart = async (course) => {
+    console.log("=== ADD TO CART DEBUG ===");
+    console.log("User:", user);
+    console.log("Course ID:", course._id);
+    console.log("Course Title:", course.title);
+    
     if (!user) {
       alert("Please login to add courses to cart");
+      return;
+    }
+
+    console.log("User role:", user.role);
+    if (user.role !== "student") {
+      alert("Only students can add courses to cart");
       return;
     }
 
@@ -78,43 +76,35 @@ function ShowCourses() {
     }
 
     try {
-      const token = getToken();
-      if (!token) {
-        alert("Authentication token not found. Please login again.");
-        return;
-      }
-
-      const response = await fetch("http://localhost:3001/api/protected/cart", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ courseId: course._id }),
+      console.log("Sending request to /api/protected/cart with courseId:", course._id);
+      const response = await api.post("/api/protected/cart", {
+        courseId: course._id,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
-        alert("Course added to cart!");
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || "Failed to add course to cart");
-      }
+      console.log("Response received:", response.data);
+      setCart(response.data.cart);
+      alert("Course added to cart!");
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      alert("Error adding course to cart: " + error.message);
+      console.error("=== CART ERROR ===");
+      console.error("Error object:", error);
+      console.error("Error response:", error.response);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.response?.status);
+      console.error("Error data:", error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || "Failed to add course to cart";
+      alert(`Error: ${errorMessage}`);
     }
   };
 
   return (
     <>
       <Navbar />
-      <section className="px-24 py-10 flex flex-col items-center h-full justify-center gap-5 max-sm:px-2 max-md:px-10">
-        <h1 className="text-5xl font-semibold text-[#000000] font-secondary text-center">
+      <section className="px-24 py-10 flex flex-col items-center h-full justify-center gap-5 max-sm:px-2 max-md:px-10 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <h1 className="text-5xl font-semibold text-gray-900 font-secondary text-center">
           Explore Courses
         </h1>
-        <p className="text-center">
+        <p className="text-center text-gray-700">
           Empower your growth through engaging, real-world learning experiences.
         </p>
         <div className="relative inline-block w-[60vw] max-md:w-full">
@@ -122,32 +112,32 @@ function ShowCourses() {
             type="search"
             name="search"
             placeholder="Search Courses"
-            className="border-1 border-black py-3 pl-5 pr-35 rounded-full w-full"
+            className="border border-gray-300 py-3 pl-5 pr-35 rounded-full w-full bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
-          <button className="absolute right-1 px-10 py-2 bg-[hsla(220,97%,58%,1)] text-white rounded-full top-[9%] cursor-pointer">
+          <button className="absolute right-1 px-10 py-2 bg-blue-600 text-white rounded-full top-[9%] cursor-pointer hover:bg-blue-700 transition">
             Search
           </button>
         </div>
       </section>
-      <section className="flex justify-between md:px-10 px-2 max-sm:flex-col max-md:gap-2">
+      <section className="flex justify-between md:px-10 px-2 max-sm:flex-col max-md:gap-2 bg-white py-4 border-b border-gray-200">
         <div>
           <ul className="flex gap-1">
-            <li className="px-1 md:px-2 md:py-1 border-1 border-black cursor-pointer max-md:text-sm">
+            <li className="px-1 md:px-2 md:py-1 border border-gray-300 cursor-pointer max-md:text-sm bg-white text-gray-900 hover:bg-gray-100 transition rounded">
               Web Development
             </li>
-            <li className="px-1 md:px-2 md:py-1 border-1 border-black cursor-pointer max-md:text-sm">
+            <li className="px-1 md:px-2 md:py-1 border border-gray-300 cursor-pointer max-md:text-sm bg-white text-gray-900 hover:bg-gray-100 transition rounded">
               Science
             </li>
-            <li className="px-1 md:px-2 md:py-1 border-1 border-black cursor-pointer max-md:text-sm">
+            <li className="px-1 md:px-2 md:py-1 border border-gray-300 cursor-pointer max-md:text-sm bg-white text-gray-900 hover:bg-gray-100 transition rounded">
               Tech
             </li>
-            <li className="px-1 md:px-2 md:py-1 border-1 border-black cursor-pointer max-md:text-sm">
+            <li className="px-1 md:px-2 md:py-1 border border-gray-300 cursor-pointer max-md:text-sm bg-white text-gray-900 hover:bg-gray-100 transition rounded">
               Marketing
             </li>
           </ul>
         </div>
         <div>
-          <select name="filters" id="filters">
+          <select name="filters" id="filters" className="bg-white text-gray-900 border border-gray-300 px-3 py-1 rounded cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none">
             <option value="newest">Newest</option>
             <option value="mostrated">Most rated</option>
             <option value="mostrelevant">Most Relevant</option>
@@ -156,13 +146,13 @@ function ShowCourses() {
           </select>
         </div>
       </section>
-      <main className="px-1 md:px-4 lg:px-8 h-full mt-10">
+      <main className="px-1 md:px-4 lg:px-8 h-full mt-10 bg-white pb-10">
         <section className="sm:grid lg:grid-cols-4 gap-4 sm:grid-cols-2 md:grid-cols-3 flex flex-wrap justify-center">
           {courses.length > 0 ? (
             courses.map((course, idx) => (
               <div
                 key={course._id || idx}
-                className="bg-white rounded-xl shadow-md flex flex-col mb-6"
+                className="bg-white rounded-xl shadow-md hover:shadow-xl flex flex-col mb-6 border border-gray-200 transition-all"
               >
                 <div className="relative w-full h-48 rounded-t-xl overflow-hidden">
                   {course.image ? (
@@ -203,7 +193,7 @@ function ShowCourses() {
                   </div>
                 </div>
                 <div className="p-4 flex flex-col flex-1">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-2">
+                  <h3 className="font-bold text-lg mb-2 line-clamp-2 text-gray-900">
                     {course.title}
                   </h3>
                   {course.instructor && (
@@ -223,17 +213,17 @@ function ShowCourses() {
                       ₹{course.price}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-500 mt-2">
+                  <div className="flex items-center gap-2 text-gray-600 mt-2">
                     <Clock className="w-4 h-4" />
                     <span>Duration: {course.hours || "N/A"} hrs</span>
                   </div>
                   {course.studentsEnrolled > 0 && (
-                    <div className="text-gray-500 text-sm mt-1">
+                    <div className="text-gray-600 text-sm mt-1">
                       {course.studentsEnrolled} students enrolled
                     </div>
                   )}
                   <button
-                    className="bg-blue-700 text-white px-5 py-2 mt-4 rounded-md w-full hover:bg-blue-800 transition duration-200"
+                    className="bg-blue-600 text-white px-5 py-2 mt-4 rounded-md w-full hover:bg-blue-700 transition duration-200 font-semibold"
                     onClick={() => handleAddToCart(course)}
                   >
                     Add to cart
@@ -242,7 +232,7 @@ function ShowCourses() {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-center py-12 w-full">
+            <p className="text-gray-600 text-center py-12 w-full">
               {loading ? "Loading courses..." : "No courses found"}
             </p>
           )}

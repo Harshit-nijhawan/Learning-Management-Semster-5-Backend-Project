@@ -1,11 +1,11 @@
 import axios from "axios";
-import { getCookie, deleteCookie, getToken } from "./cookieUtils";
+import { deleteCookie, getToken } from "./cookieUtils";
 
-// FIX: Use environment variable
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+// Use environment variable or default to backend URL (without /api suffix)
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const api = axios.create({
-  baseURL: BASE_URL, // Now points to /api, not /api/auth
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
