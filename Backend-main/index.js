@@ -36,15 +36,22 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
-        "https://lms-phi-pink.vercel.app"
+        "https://lms-phi-pink.vercel.app",
+        "https://lms-phi-pink.vercel.app/" // Add with trailing slash just in case
       ];
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
+
+      // Clean the origin to ensure no trailing slash issues for comparison
+      const cleanOrigin = origin.replace(/\/$/, "");
+      const isAllowed = allowedOrigins.some(o => o.replace(/\/$/, "") === cleanOrigin);
+
+      if (isAllowed) {
         callback(null, true);
       } else {
-        console.log("Blocked by CORS:", origin); // Log blocked origins for debugging
-        callback(new Error('Not allowed by CORS'));
+        console.log("❌ Blocked by CORS. Origin:", origin);
+        callback(null, true); // TEMPORARY: Allow ALL to confirm if it's strictly a CORS issue
+        // callback(new Error('Not allowed by CORS')); 
       }
     },
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
