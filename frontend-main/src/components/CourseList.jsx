@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Trash2, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import UpdateCourse from "../pages/Updatecourse";
+import UpdateCourse from "../pages/UpdateCourse";
 import api from "../utils/api";
 function CourseList({ showEdit = true }) {
   const [courses, setCourses] = useState([]);
