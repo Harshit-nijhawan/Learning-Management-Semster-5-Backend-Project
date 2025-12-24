@@ -62,9 +62,14 @@ const getArticleBySlug = async (req, res) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    // Increment view count
-    article.views += 1;
-    await article.save();
+    // Increment view count - fail silently if validation error occurs
+    // to ensure user still gets the article content
+    try {
+      article.views += 1;
+      await article.save();
+    } catch (saveError) {
+      console.warn("Could not update view count for article:", saveError.message);
+    }
 
     res.json(article);
   } catch (error) {
@@ -97,7 +102,7 @@ const createArticle = async (req, res) => {
 const updateArticle = async (req, res) => {
   try {
     const { id } = req.params;
-    const article = await ArticleModel.findById(id);
+    let article = await ArticleModel.findById(id);
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
@@ -108,11 +113,22 @@ const updateArticle = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const updated = await ArticleModel.findByIdAndUpdate(
-      id,
-      { ...req.body, lastUpdatedBy: req.user._id },
-      { new: true }
-    );
+    // Update fields manually to trigger pre-save hooks (for slug generation)
+    // and validators
+    const allowedUpdates = [
+      'title', 'category', 'subcategory', 'difficulty',
+      'description', 'readTime', 'content', 'tags', 'status'
+    ];
+
+    allowedUpdates.forEach(update => {
+      if (req.body[update] !== undefined) {
+        article[update] = req.body[update];
+      }
+    });
+
+    article.lastUpdatedBy = req.user._id;
+
+    const updated = await article.save();
 
     res.json({
       message: "Article updated successfully",
@@ -120,7 +136,7 @@ const updateArticle = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating article:", error);
-    res.status(500).json({ message: "Error updating article" });
+    res.status(500).json({ message: "Error updating article", error: error.message });
   }
 };
 
