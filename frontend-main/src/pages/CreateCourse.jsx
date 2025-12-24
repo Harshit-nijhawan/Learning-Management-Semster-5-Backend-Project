@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import api from "../utils/api";
 import { Plus, Trash, FileText, Video } from "lucide-react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 function CreateCourse() {
   const [file, setFile] = useState(null);

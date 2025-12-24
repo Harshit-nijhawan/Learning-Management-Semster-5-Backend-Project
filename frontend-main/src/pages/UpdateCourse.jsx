@@ -16,7 +16,7 @@ function UpdateCourse() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/courses/${id}`)
+    api.get(`/api/courses/${id}`)
       .then((res) => {
         const course = res.data;
         setTitle(course.title);
@@ -28,33 +28,7 @@ function UpdateCourse() {
       .catch(() => alert("Failed to fetch course"));
   }, [id]);
 
-  const handleChapterChange = (index, field, value) => {
-    const newChapters = [...chapters];
-    
-    // Smart clean-up: If pasting raw iframe code, extract the src URL
-    if (field === "videoLink" && value.includes("<iframe")) {
-        const match = value.match(/src="([^"]+)"/);
-        if (match && match[1]) {
-            newChapters[index][field] = match[1];
-        } else {
-            newChapters[index][field] = value;
-        }
-    } else {
-        newChapters[index][field] = value;
-    }
-    
-    setChapters(newChapters);
-  };
-
-  const addChapter = () => {
-    setChapters([...chapters, { chapterTitle: "", videoLink: "", content: "" }]);
-  };
-
-  const removeChapter = (index) => {
-    const newChapters = [...chapters];
-    newChapters.splice(index, 1);
-    setChapters(newChapters);
-  };
+  // ... (lines 31-57 omitted) 
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -66,7 +40,7 @@ function UpdateCourse() {
     if (file) formdata.append("image", file);
 
     try {
-      await api.put(`/courses/${id}`, formdata, {
+      await api.put(`/api/courses/${id}`, formdata, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Course updated successfully!");

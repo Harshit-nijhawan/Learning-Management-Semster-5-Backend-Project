@@ -45,7 +45,7 @@ function UserProfile() {
         setLoading(true);
 
         // Fetch user profile
-        const userResponse = await api.get(`/protected/user/${profileUserId}`);
+        const userResponse = await api.get(`/api/protected/user/${profileUserId}`);
         const userData = userResponse.data;
         setUser(userData);
 
@@ -56,8 +56,8 @@ function UserProfile() {
             // Otherwise, fetch courses by instructor ID
             const coursesEndpoint =
               !id || id === currentUser?._id
-                ? "/my-courses"
-                : `/courses/instructor/${profileUserId}`;
+                ? "/api/my-courses"
+                : `/api/courses/instructor/${profileUserId}`;
 
             const coursesResponse = await api.get(coursesEndpoint);
             setUserCourses(coursesResponse.data);
