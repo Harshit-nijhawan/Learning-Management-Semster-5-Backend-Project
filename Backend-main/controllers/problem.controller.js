@@ -179,6 +179,47 @@ const deleteProblem = async (req, res) => {
 };
 
 /**
+ * Normalize output for comparison
+ * 1. Trim whitespace from end
+ * 2. Unify newlines
+ * 3. Trim every line
+ */
+const normalizeOutput = (str) => {
+  if (!str) return "";
+  return str
+    .replace(/\r\n/g, '\n') // Normalize newlines
+    .split('\n')            // Split into lines
+    .map(line => line.trimEnd()) // Trim end of each line
+    .join('\n')             // Join back
+    .trim();                // Trim total string
+};
+
+/**
+ * Compare Actual vs Expected Output
+ * Handles:
+ * 1. Exact String Match
+ * 2. Floating Point Precision (1.0 vs 1.000)
+ */
+const compareOutputs = (actual, expected) => {
+  const normActual = normalizeOutput(actual);
+  const normExpected = normalizeOutput(expected);
+
+  if (normActual === normExpected) return true;
+
+  // Float Comparison Strategy
+  const floatActual = parseFloat(normActual);
+  const floatExpected = parseFloat(normExpected);
+
+  if (!isNaN(floatActual) && !isNaN(floatExpected)) {
+    if (Math.abs(floatActual - floatExpected) < 1e-6) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Execute code against Test Cases (Sample or Hidden)
  * Shared logic for Run and Submit
  */
@@ -199,8 +240,20 @@ const executeTestCases = async (code, language, testCases) => {
       );
 
       const statusId = response.status.id;
-      const verdict = judgeService.getVerdict(statusId);
-      const passed = statusId === 3; // 3 means Accepted
+      let verdict = judgeService.getVerdict(statusId);
+
+      let passed = (statusId === 3);
+
+      if (statusId === 3 || statusId === 4) {
+        const isMatch = compareOutputs(response.stdout, testCase.expectedOutput);
+        if (isMatch) {
+          passed = true;
+          verdict = "Accepted";
+        } else {
+          passed = false;
+          verdict = "Wrong Answer";
+        }
+      }
 
       if (!passed) allPassed = false;
 
@@ -216,14 +269,12 @@ const executeTestCases = async (code, language, testCases) => {
         passed,
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
-        actualOutput: response.stdout ? response.stdout.trim() : response.stderr || response.compile_output,
+        actualOutput: response.stdout ? response.stdout.trim() : (response.stderr || response.compile_output),
         time,
         memory
       });
 
-      // Optional: Stop on first failure? 
-      // User requested "Stop execution on first failure" in feature list.
-      if (!passed) break;
+      if (!passed) break; // Stop on first failure
 
     } catch (err) {
       allPassed = false;

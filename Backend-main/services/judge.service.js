@@ -4,6 +4,7 @@ const axios = require('axios');
 const PISTON_API_URL = 'https://emkc.org/api/v2/piston/execute';
 
 // Language Mapping: Judge0 ID -> Piston Language Name & Version
+// Note: Piston versions might update, but specifying version is safer for reproducibility.
 const LANGUAGE_MAP = {
     71: { language: 'python', version: '3.10.0' },      // Python
     62: { language: 'java', version: '15.0.2' },        // Java
@@ -13,15 +14,20 @@ const LANGUAGE_MAP = {
 };
 
 /**
+ * Normalizes output by trimming trailing whitespace and unifying newlines.
+ * Piston/Judge0 outputs may differ in trailing newlines.
+ */
+const normalizeOutput = (str) => {
+    if (!str) return "";
+    return str.replace(/\r\n/g, '\n').trimEnd();
+};
+
+/**
  * Execute code using Piston API (Free Alternative to Judge0)
  * Adapts Piston's request/response to match Judge0's format to avoid breaking other files.
  */
 exports.executeCode = async (sourceCode, language, stdin, expectedOutput = null) => {
     try {
-        // Map input language (string or id) to Piston config
-        // The controller sends specific strings "python", "java", etc.
-        // But we need to be robust. Let's use a standard map based on the string name.
-
         let pistonConfig = null;
         switch (language.toLowerCase()) {
             case 'python': pistonConfig = { language: 'python', version: '3.10.0' }; break;
@@ -43,31 +49,85 @@ exports.executeCode = async (sourceCode, language, stdin, expectedOutput = null)
                 }
             ],
             stdin: stdin || "",
+            // Piston V2 arguments
+            run_timeout: 3000, // 3 seconds timeout (Piston constraint might apply)
+            compile_timeout: 10000
         };
 
         const response = await axios.post(PISTON_API_URL, payload);
         const data = response.data;
 
-        // Adapt Piston Response to Judge0 Format
-        // Piston returns: { run: { stdout: "...", stderr: "...", code: 0, signal: null } }
-        // Judge0 expects: { stdout: "...", stderr: "...", status: { id: 3, description: "Accepted" } } OR similar
+        // --- INTELLIGENT RESULT PARSING ---
+
+        // 1. Determine Verdict
+        // Judge0 Status IDs:
+        // 3: Accepted
+        // 4: Wrong Answer (Determined by comparison, not here usually, but we set accepted here if run ok)
+        // 5: Time Limit Exceeded
+        // 6: Compilation Error
+        // 11: Runtime Error (SIGSEGV, SIGABRT, Non-zero exit code)
+
+        let statusId = 3; // Default to Accepted
+        let description = 'Accepted';
+
+        const runStage = data.run;
+        const compileStage = data.compile;
+
+        // Check for Compilation Error
+        if (compileStage && compileStage.code !== 0) {
+            statusId = 6;
+            description = 'Compilation Error';
+        }
+        // Check for Runtime Signals (TLE, Segfault)
+        else if (runStage.signal) {
+            if (runStage.signal === 'SIGKILL' || runStage.signal === 'SIGTERM') {
+                statusId = 5;
+                description = 'Time Limit Exceeded';
+            } else {
+                statusId = 11;
+                description = `Runtime Error (${runStage.signal})`;
+            }
+        }
+        // Check for Non-Zero Exit Code (Runtime Error)
+        else if (runStage.code !== 0) {
+            statusId = 11;
+            description = 'Runtime Error';
+        }
+
+        // 2. Prepare Output
+        // If compilation error, show compile output. Else show stderr or stdout.
+        let output = "";
+        let errorOutput = "";
+
+        if (statusId === 6) {
+            errorOutput = compileStage.output || compileStage.stderr;
+        } else {
+            output = runStage.stdout;
+            errorOutput = runStage.stderr;
+        }
 
         const result = {
-            stdout: data.run.stdout,
-            stderr: data.run.stderr,
-            // Piston doesn't give specific verdicts like "Wrong Answer", we infer basic status
+            stdout: output,
+            stderr: errorOutput,
+            compile_output: compileStage ? compileStage.output : "",
             status: {
-                id: data.run.code === 0 ? 3 : 6, // 3 = Accepted (generic success), 6 = Error (generic)
-                description: data.run.code === 0 ? 'Accepted' : 'Runtime Error'
+                id: statusId,
+                description: description
             },
-            time: "0.1", // Piston doesn't always return time in same format, mock it
+            // Piston V2 doesn't always strictly return execution duration in ms in the public API response easily?
+            // Actually it does not guarantee 'duration' field in all versions.
+            // But usually we can assume fast execution if successful.
+            time: "0.1",
             memory: "0"
         };
 
-        // Simple manual verification if expected output is provided
-        if (expectedOutput && result.stdout) {
-            const cleanOutput = result.stdout.trim();
-            const cleanExpected = expectedOutput.trim();
+        // --- OUTPUT VERIFICATION (Moved to Controller mostly, but simple check here allowed) ---
+        // Verify output manually if expected provided AND we think it's 'Accepted' so far
+        if (expectedOutput && statusId === 3) {
+            // Use our normalize helper
+            const cleanOutput = normalizeOutput(result.stdout);
+            const cleanExpected = normalizeOutput(expectedOutput);
+
             if (cleanOutput !== cleanExpected) {
                 result.status.id = 4; // Wrong Answer
                 result.status.description = 'Wrong Answer';
@@ -94,7 +154,8 @@ exports.getVerdict = (statusId) => {
         case 3: return 'Accepted';
         case 4: return 'Wrong Answer';
         case 5: return 'Time Limit Exceeded';
-        case 6: return 'Compilation/Runtime Error';
+        case 6: return 'Compilation Error';
+        case 11: return 'Runtime Error';
         default: return 'Unknown Error';
     }
 };
