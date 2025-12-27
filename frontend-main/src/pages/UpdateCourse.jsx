@@ -22,20 +22,41 @@ function UpdateCourse() {
         setTitle(course.title);
         setDescription(course.description);
         setPrice(course.price);
+        if (course.price === 0) setIsFree(true);
         setChapters(course.curriculum || []);
         setLoading(false);
       })
-      .catch(() => alert("Failed to fetch course"));
+      .catch(() => {
+        alert("Failed to fetch course");
+        setLoading(false);
+      });
   }, [id]);
 
-  // ... (lines 31-57 omitted) 
+  const [isFree, setIsFree] = useState(false);
+
+  // Restore helper functions
+  const handleChapterChange = (index, field, value) => {
+    const newChapters = [...chapters];
+    newChapters[index][field] = value;
+    setChapters(newChapters);
+  };
+
+  const addChapter = () => {
+    setChapters([...chapters, { chapterTitle: "", videoLink: "", content: "" }]);
+  };
+
+  const removeChapter = (index) => {
+    const newChapters = [...chapters];
+    newChapters.splice(index, 1);
+    setChapters(newChapters);
+  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     const formdata = new FormData();
     formdata.append("title", title);
     formdata.append("description", description);
-    formdata.append("price", price);
+    formdata.append("price", isFree ? 0 : price);
     formdata.append("curriculum", JSON.stringify(chapters));
     if (file) formdata.append("image", file);
 
@@ -69,7 +90,30 @@ function UpdateCourse() {
               <h3 className="text-lg font-semibold text-gray-700 mb-4">Basic Information</h3>
               <div className="grid gap-6 md:grid-cols-2 mb-4">
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border p-3 rounded bg-white" placeholder="Course Title" required />
-                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border p-3 rounded bg-white" placeholder="Price" required />
+                <div className="flex items-center gap-4">
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className={`w-full border p-3 rounded bg-white ${isFree ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''}`}
+                    placeholder="Price"
+                    disabled={isFree}
+                    required={!isFree}
+                  />
+                  <div className="flex items-center gap-2 min-w-max">
+                    <input
+                      type="checkbox"
+                      id="isFreeEdit"
+                      checked={isFree}
+                      onChange={(e) => {
+                        setIsFree(e.target.checked);
+                        if (e.target.checked) setPrice(0);
+                      }}
+                      className="w-5 h-5 accent-blue-600"
+                    />
+                    <label htmlFor="isFreeEdit" className="cursor-pointer text-sm font-medium">Free Course</label>
+                  </div>
+                </div>
               </div>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border p-3 rounded h-24 bg-white" placeholder="Description" required />
               <div className="mt-4">

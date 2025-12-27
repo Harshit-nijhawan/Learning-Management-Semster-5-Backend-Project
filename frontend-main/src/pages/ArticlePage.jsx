@@ -183,9 +183,13 @@ function ArticlePage() {
                 </h2>
 
                 {section.sectionType === 'text' && (
-                  <div className="prose prose-lg prose-blue max-w-none text-gray-700 leading-relaxed">
+                  <div className="prose prose-lg md:prose-xl prose-slate max-w-none 
+      prose-headings:font-bold prose-headings:text-blue-800 
+      prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+      prose-strong:text-blue-900 prose-code:text-purple-600
+      prose-li:marker:text-blue-500 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {section.text}
+                      {cleanMarkdown(section.text)}
                     </ReactMarkdown>
                   </div>
                 )}

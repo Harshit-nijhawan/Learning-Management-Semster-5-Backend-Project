@@ -5,6 +5,7 @@ require('dotenv').config();
 const sampleQuestions = [
   {
     title: "Two Sum",
+    slug: "two-sum",
     description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
 
 You may assume that each input would have exactly one solution, and you may not use the same element twice.
@@ -71,6 +72,7 @@ console.log(solution([2,7,11,15], 9)); // Expected: [0,1]`,
   },
   {
     title: "Reverse String",
+    slug: "reverse-string",
     description: `Write a function that reverses a string. The input string is given as an array of characters s.
 
 You must do this by modifying the input array in-place with O(1) extra memory.`,
@@ -134,6 +136,7 @@ console.log(test); // Expected: ['o','l','l','e','h']`,
   },
   {
     title: "Valid Palindrome",
+    slug: "valid-palindrome",
     description: `A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward. Alphanumeric characters include letters and numbers.
 
 Given a string s, return true if it is a palindrome, or false otherwise.`,
@@ -195,6 +198,7 @@ console.log(solution("A man, a plan, a canal: Panama")); // Expected: true`,
   },
   {
     title: "Maximum Subarray",
+    slug: "maximum-subarray",
     description: `Given an integer array nums, find the subarray with the largest sum, and return its sum.
 
 A subarray is a contiguous non-empty sequence of elements within an array.`,
@@ -256,6 +260,7 @@ console.log(solution([-2,1,-3,4,-1,2,1,-5,4])); // Expected: 6`,
   },
   {
     title: "Merge Two Sorted Lists",
+    slug: "merge-two-sorted-lists",
     description: `You are given the heads of two sorted linked lists list1 and list2.
 
 Merge the two lists in a one sorted list. The list should be made by splicing together the nodes of the first two lists.

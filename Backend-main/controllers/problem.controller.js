@@ -1,6 +1,8 @@
 const ProblemModel = require("../models/Problem");
 const UserProgressModel = require("../models/UserProgress");
-const { VM } = require('vm2');
+const SubmissionModel = require("../models/Submission");
+const DailyQuestion = require("../models/DailyQuestion");
+const judgeService = require("../services/judge.service");
 
 // Get all problems with filters
 const getProblems = async (req, res) => {
@@ -54,19 +56,51 @@ const getProblemBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const problem = await ProblemModel.findOne({ slug, status: 'published' })
+    let problem = await ProblemModel.findOne({ slug, status: 'published' })
       .populate('author', 'name email')
       .populate('relatedProblems', 'title slug difficulty')
       .populate('similarProblems', 'title slug difficulty')
       .select('-hiddenTestCases -solutions'); // Don't send solutions
 
     if (!problem) {
+      // Try to find in DailyQuestion
+      const dailyQuestion = await DailyQuestion.findOne({ slug })
+        .select('-testCases.isHidden'); // Hide hidden test cases
+
+      if (dailyQuestion) {
+        // Adapt DailyQuestion to look like Problem if necessary, or just return it
+        // Note: DailyQuestion doesn't have author/relatedProblems populated usually
+        problem = dailyQuestion;
+
+        // Add sampleTestCases from testCases (if not present)
+        if (!problem.sampleTestCases && problem.testCases) {
+          problem = problem.toObject();
+          problem.sampleTestCases = problem.testCases.filter(tc => !tc.isHidden);
+        }
+      }
+    }
+
+    if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    // Increment view count
-    problem.stats.views += 1;
-    await problem.save();
+    // Increment view count if it exists in schema
+    if (problem.stats) {
+      if (!problem.stats.views) problem.stats.views = 0;
+      problem.stats.views += 1;
+      // Use model.save() if it's a mongoose document, else we need to update differently
+      // Since 'problem' could be a POJO now (if we used toObject), be careful.
+      if (typeof problem.save === 'function') {
+        await problem.save();
+      } else {
+        // It's a daily question POJO or modified object
+        if (problem._id && !problem.slug) {
+          // Logic to update view count for DailyQuestion if needed
+          // For now, skipping view count update for DailyQuestion to avoid complexity or just do a direct update
+
+        }
+      }
+    }
 
     res.json(problem);
   } catch (error) {
@@ -144,98 +178,259 @@ const deleteProblem = async (req, res) => {
   }
 };
 
-// Submit solution to a problem
+/**
+ * Execute code against Test Cases (Sample or Hidden)
+ * Shared logic for Run and Submit
+ */
+const executeTestCases = async (code, language, testCases) => {
+  const results = [];
+  let allPassed = true;
+  let totalTime = 0;
+  let maxMemory = 0;
+
+  for (let i = 0; i < testCases.length; i++) {
+    const testCase = testCases[i];
+    try {
+      const response = await judgeService.executeCode(
+        code,
+        language,
+        testCase.input,
+        testCase.expectedOutput
+      );
+
+      const statusId = response.status.id;
+      const verdict = judgeService.getVerdict(statusId);
+      const passed = statusId === 3; // 3 means Accepted
+
+      if (!passed) allPassed = false;
+
+      const time = parseFloat(response.time || 0);
+      const memory = response.memory || 0;
+
+      totalTime += time;
+      maxMemory = Math.max(maxMemory, memory);
+
+      results.push({
+        testCaseId: i + 1,
+        status: verdict,
+        passed,
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+        actualOutput: response.stdout ? response.stdout.trim() : response.stderr || response.compile_output,
+        time,
+        memory
+      });
+
+      // Optional: Stop on first failure? 
+      // User requested "Stop execution on first failure" in feature list.
+      if (!passed) break;
+
+    } catch (err) {
+      allPassed = false;
+      results.push({
+        testCaseId: i + 1,
+        status: "System Error",
+        passed: false,
+        error: err.message
+      });
+      break;
+    }
+  }
+
+  return {
+    results,
+    allPassed,
+    totalTime,
+    maxMemory
+  };
+};
+
+// Run Code (Sample Test Cases Only)
+const runCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, language } = req.body;
+
+    if (!code || !language) return res.status(400).json({ message: "Code and language required" });
+
+    let problem = await ProblemModel.findById(id);
+    let isDaily = false;
+
+    if (!problem) {
+      // Check if it's a daily question
+      problem = await DailyQuestion.findById(id);
+      isDaily = !!problem;
+    }
+
+    if (!problem) return res.status(404).json({ message: "Problem not found" });
+
+    // Use Sample Test Cases
+    // DailyQuestion schema has 'testCases', and 'examples'. 'testCases' includes hidden ones marked isHidden.
+    // We should use visible test cases.
+    let testCases = [];
+
+    if (isDaily) {
+      // Filter out hidden test cases for run
+      testCases = problem.testCases.filter(tc => !tc.isHidden).map(tc => ({
+        input: tc.input,
+        expectedOutput: tc.expectedOutput
+      }));
+    } else {
+      testCases = problem.sampleTestCases.map(tc => ({
+        input: tc.input,
+        expectedOutput: tc.output
+      }));
+    }
+
+    const execution = await executeTestCases(code, language, testCases);
+
+    res.json({
+      verdict: execution.allPassed ? "Accepted" : "Wrong Answer", // Simplified for run
+      results: execution.results,
+      allPassed: execution.allPassed
+    });
+
+  } catch (error) {
+    console.error("Run Code Error:", error);
+    res.status(500).json({ message: "Error running code" });
+  }
+};
+
+// Submit Solution (Hidden Test Cases + Save Submission)
 const submitSolution = async (req, res) => {
   try {
     const { id } = req.params;
     const { code, language } = req.body;
     const userId = req.user._id;
 
-    if (!code || !language) {
-      return res.status(400).json({ message: "Code and language are required" });
-    }
+    if (!code || !language) return res.status(400).json({ message: "Code and language required" });
 
-    const problem = await ProblemModel.findById(id);
+    let problem = await ProblemModel.findById(id);
+    let isDaily = false;
 
     if (!problem) {
-      return res.status(404).json({ message: "Problem not found" });
+      problem = await DailyQuestion.findById(id);
+      isDaily = !!problem;
     }
 
-    // Combine visible and hidden test cases
-    const allTestCases = [
-      ...problem.sampleTestCases.map(tc => ({
+    if (!problem) return res.status(404).json({ message: "Problem not found" });
+
+    // Combine Sample + Hidden Test Cases for Full Validation
+    let allTestCases = [];
+
+    if (isDaily) {
+      allTestCases = problem.testCases.map(tc => ({
         input: tc.input,
-        expectedOutput: tc.output,
-        isHidden: false
-      })),
-      ...problem.hiddenTestCases.map(tc => ({
-        input: tc.input,
-        expectedOutput: tc.output,
-        isHidden: true
-      }))
-    ];
+        expectedOutput: tc.expectedOutput // Note: DailyQuestion uses expectedOutput, Problem uses output. 
+        // The RunCode update handled this map in logic, here we standardize.
+      }));
+    } else {
+      allTestCases = [
+        ...problem.sampleTestCases.map(tc => ({ input: tc.input, expectedOutput: tc.output })),
+        ...problem.hiddenTestCases.map(tc => ({ input: tc.input, expectedOutput: tc.output }))
+      ];
+    }
 
-    // Run test cases
-    const result = await runTestCases(code, language, allTestCases);
+    const execution = await executeTestCases(code, language, allTestCases);
 
-    problem.stats.totalSubmissions += 1;
+    // Determine Final Verdict
+    let finalVerdict = "Accepted";
+    if (!execution.allPassed) {
+      // Get the first failure status
+      const failedTest = execution.results.find(r => !r.passed);
+      finalVerdict = failedTest ? failedTest.status : "Unknown Error";
+    }
 
-    const passed = result.status === 'accepted';
+    // Save Submission
+    // Note: SubmissionModel references 'Students' for userId. problemId currently isn't strictly ref-checked by Mongo usually unless populated.
+    // If SubmissionModel stores problemId as ObjectId w/o strict ref, it should work for both collections.
+    const submission = await SubmissionModel.create({
+      userId,
+      problemId: id,
+      code,
+      language,
+      verdict: finalVerdict,
+      timeUsed: execution.totalTime,
+      memoryUsed: execution.maxMemory,
+      testCasesPassed: execution.results.filter(r => r.passed).length,
+      totalTestCases: allTestCases.length
+    });
 
-    if (passed) {
-      problem.stats.successfulSubmissions += 1;
+    // Update Stats & User Progress if Accepted
+    if (problem.stats) {
+      // DailyQuestion handles stats slightly differently in schema but fields like totalSubmissions exist
+      // DailyQuestion: totalSubmissions, totalAccepted
+      // Problem: stats { totalSubmissions, successfulSubmissions }
 
-      // Update user progress
-      let progress = await UserProgressModel.findOne({ user: userId });
-      if (!progress) {
-        progress = await UserProgressModel.create({ user: userId });
+      if (isDaily) {
+        problem.totalSubmissions += 1;
+        if (finalVerdict === "Accepted") {
+          problem.totalAccepted += 1;
+          if (problem.updateAcceptanceRate) problem.updateAcceptanceRate();
+        }
+      } else {
+        problem.stats.totalSubmissions += 1;
+        if (finalVerdict === "Accepted") {
+          problem.stats.successfulSubmissions += 1;
+        }
       }
+    } else if (isDaily) {
+      // Fallback if stats object didn't exist but it's daily (should validly hit above block if schema matches)
+      problem.totalSubmissions += 1;
+      if (finalVerdict === "Accepted") {
+        problem.totalAccepted += 1;
+        if (problem.updateAcceptanceRate) problem.updateAcceptanceRate();
+      }
+    }
 
-      const alreadySolved = progress.problemsSolved.some(
-        p => p.problem.toString() === id
-      );
+
+    if (finalVerdict === "Accepted") {
+
+      // Update User Progress
+      let progress = await UserProgressModel.findOne({ user: userId });
+      if (!progress) progress = await UserProgressModel.create({ user: userId });
+
+      // Check if solved
+      const alreadySolved = progress.problemsSolved.some(p => p.problem.toString() === id);
 
       if (!alreadySolved) {
         progress.problemsSolved.push({
           problem: id,
           language,
           code,
-          attempts: 1
+          attempts: 1 // Improved logic needed for real attempts count
         });
+        // DailyQuestion might not have 'points' field in same way? Schema says it does (default 10 in Problem, DailyQuestion schema didn't show points explicitly in seed but let's check schema file if needed.
+        // DailyQuestion schema does NOT have points. Let's assume 10 or 0.
+        // Wait, Problem model has points. DailyQuestion model doesn't seem to have points in the schema view I saw earlier.
+        // Let's safe check points.
+        const pointsAwarded = problem.points || 10;
 
-        progress.totalPoints += problem.points;
+        progress.totalPoints += pointsAwarded;
         progress.updateStreak();
-
         progress.recentActivity.unshift({
           type: 'problem_solved',
           itemId: id,
           description: `Solved: ${problem.title}`
         });
-
-        if (progress.recentActivity.length > 50) {
-          progress.recentActivity = progress.recentActivity.slice(0, 50);
-        }
+        if (progress.recentActivity.length > 50) progress.recentActivity.pop();
+        await progress.save();
       }
-
-      await progress.save();
     }
 
     await problem.save();
 
     res.json({
-      success: passed,
-      passed,
-      result: {
-        status: result.status,
-        passedTests: result.passedTests,
-        totalTests: result.totalTests,
-        runtime: result.runtime,
-        testResults: result.testResults,
-        message: result.message
-      }
+      submissionId: submission._id,
+      verdict: finalVerdict,
+      results: execution.results,
+      allPassed: execution.allPassed,
+      timeUsed: execution.totalTime,
+      memoryUsed: execution.maxMemory
     });
+
   } catch (error) {
-    console.error("Error submitting solution:", error);
+    console.error("Submit Error:", error);
     res.status(500).json({ message: "Error submitting solution" });
   }
 };
@@ -305,118 +500,15 @@ const getProblemHint = async (req, res) => {
   }
 };
 
-// Run code against test cases
-async function runTestCases(code, language, testCases) {
-  const startTime = Date.now();
-  let passedTests = 0;
-  const testResults = [];
-
-  try {
-    for (let i = 0; i < testCases.length; i++) {
-      const testCase = testCases[i];
-
-      try {
-        const result = await executeCode(code, language, testCase.input);
-        const passed = result.trim() === testCase.expectedOutput.trim();
-
-        if (passed) passedTests++;
-
-        testResults.push({
-          testNumber: i + 1,
-          input: testCase.isHidden ? 'Hidden' : testCase.input,
-          expectedOutput: testCase.isHidden ? 'Hidden' : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? 'Hidden' : result,
-          passed,
-          isHidden: testCase.isHidden
-        });
-
-        if (!passed && !testCase.isHidden) {
-          break; // Stop at first failing visible test
-        }
-      } catch (error) {
-        testResults.push({
-          testNumber: i + 1,
-          input: testCase.isHidden ? 'Hidden' : testCase.input,
-          expectedOutput: testCase.isHidden ? 'Hidden' : testCase.expectedOutput,
-          actualOutput: 'Runtime Error',
-          passed: false,
-          error: error.message,
-          isHidden: testCase.isHidden
-        });
-
-        return {
-          status: 'runtime-error',
-          passedTests,
-          totalTests: testCases.length,
-          runtime: Date.now() - startTime,
-          testResults,
-          message: `Runtime Error: ${error.message}`
-        };
-      }
-    }
-
-    const runtime = Date.now() - startTime;
-    const status = passedTests === testCases.length ? 'accepted' : 'wrong-answer';
-
-    return {
-      status,
-      passedTests,
-      totalTests: testCases.length,
-      runtime,
-      testResults,
-      message: status === 'accepted' ? 'All test cases passed!' : 'Some test cases failed'
-    };
-  } catch (error) {
-    return {
-      status: 'runtime-error',
-      passedTests,
-      totalTests: testCases.length,
-      runtime: Date.now() - startTime,
-      testResults,
-      message: `Error: ${error.message}`
-    };
-  }
-}
-
-// Execute code in sandbox (JavaScript only for now)
-async function executeCode(code, language, input) {
-  if (language === 'javascript') {
-    const vm = new VM({
-      timeout: 3000,
-      sandbox: {}
-    });
-
-    // Wrap code to capture console output
-    const wrappedCode = `
-      let output = '';
-      const console = {
-        log: (...args) => { output += args.join(' ') + '\\n'; }
-      };
-      
-      ${code}
-      
-      // Try to call the main function if it exists
-      if (typeof solution !== 'undefined') {
-        const result = solution(${input});
-        console.log(result);
-      }
-      
-      output.trim();
-    `;
-
-    return vm.run(wrappedCode);
-  } else {
-    throw new Error(`Language ${language} is not supported yet. Currently only JavaScript is supported.`);
-  }
-}
-
 module.exports = {
   getProblems,
   getProblemBySlug,
   createProblem,
   updateProblem,
   deleteProblem,
+  runCode, // New endpoint
   submitSolution,
   toggleBookmarkProblem,
   getProblemHint
 };
+

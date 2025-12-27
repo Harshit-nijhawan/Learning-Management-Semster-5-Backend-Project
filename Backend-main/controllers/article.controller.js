@@ -24,7 +24,7 @@ const getArticles = async (req, res) => {
       filter.$text = { $search: search };
     }
 
-    console.log("DEBUG: Fetching articles with filter:", JSON.stringify(filter));
+
 
     const articles = await ArticleModel.find(filter)
       .populate('author', 'name email')

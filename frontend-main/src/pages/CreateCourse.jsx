@@ -9,6 +9,7 @@ function CreateCourse() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [isFree, setIsFree] = useState(false);
   const [chapters, setChapters] = useState([
     { chapterTitle: "", videoLink: "", content: "" }
   ]);
@@ -63,7 +64,30 @@ function CreateCourse() {
               </div>
               <div>
                 <label className="block font-semibold mb-1">Price (₹)</label>
-                <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full border p-2 rounded" required />
+                <div className="flex items-center gap-4">
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    className={`w-full border p-2 rounded ${isFree ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''}`}
+                    disabled={isFree}
+                    required={!isFree}
+                    min="0"
+                  />
+                  <div className="flex items-center gap-2 min-w-max">
+                    <input
+                      type="checkbox"
+                      id="isFree"
+                      checked={isFree}
+                      onChange={(e) => {
+                        setIsFree(e.target.checked);
+                        if (e.target.checked) setPrice(0);
+                      }}
+                      className="w-5 h-5 accent-blue-600"
+                    />
+                    <label htmlFor="isFree" className="cursor-pointer text-sm font-medium">Free Course</label>
+                  </div>
+                </div>
               </div>
             </div>
 

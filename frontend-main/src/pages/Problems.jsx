@@ -101,83 +101,92 @@ const Problems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-sans text-slate-800">
       <Navbar />
 
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Code className="w-10 h-10" />
-              <h1 className="text-4xl font-bold">Practice Problems</h1>
-            </div>
-            <p className="text-xl text-green-100 mb-6">
-              Solve coding challenges and improve your problem-solving skills
-            </p>
+      <div className="relative overflow-hidden bg-slate-900 py-20">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+          <div className="absolute -top-1/2 -left-1/4 w-full h-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 blur-3xl rounded-full"></div>
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-blue-500/20 to-teal-500/20 blur-3xl rounded-full"></div>
+        </div>
 
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 mb-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                <div className="text-3xl font-bold">{stats.solved}</div>
-                <div className="text-sm text-green-100">Solved</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                <div className="text-3xl font-bold">{stats.total}</div>
-                <div className="text-sm text-green-100">Total Problems</div>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="relative shadow-lg">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search problems by title, tags, or company..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 border-2 border-transparent hover:border-green-300 transition-all"
-                />
-              </div>
-            </form>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+          <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-md rounded-2xl mb-6 shadow-2xl ring-1 ring-white/20">
+            <Code className="w-8 h-8 text-indigo-400" />
           </div>
+          <h1 className="text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+            Practice Problems
+          </h1>
+          <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+            Master your coding skills with our curated collection of challenges.
+          </p>
+
+          {/* Stats */}
+          <div className="flex justify-center gap-6 mb-12">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl px-8 py-4 border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="text-4xl font-bold text-emerald-400 mb-1">{stats.solved}</div>
+              <div className="text-sm font-medium text-slate-400 uppercase tracking-wider">Solved</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl px-8 py-4 border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="text-4xl font-bold text-blue-400 mb-1">{stats.total}</div>
+              <div className="text-sm font-medium text-slate-400 uppercase tracking-wider">Total Problems</div>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="max-w-3xl mx-auto relative group z-10">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+            <div className="relative flex items-center bg-white rounded-xl shadow-2xl p-2 ring-1 ring-gray-900/5">
+              <Search className="ml-4 text-slate-400 w-6 h-6" />
+              <input
+                type="text"
+                placeholder="Search problems by title, tags, or company..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-4 py-3 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none text-lg"
+              />
+              <button type="submit" className="bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors shadow-lg">
+                Search
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Difficulty Tabs */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center gap-4 overflow-x-auto">
-            <Filter className="w-5 h-5 text-gray-600 flex-shrink-0" />
-            {difficulties.map((diff) => (
-              <button
-                key={diff.name}
-                onClick={() => {
-                  setSelectedDifficulty(diff.name);
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-2 rounded-md font-medium whitespace-nowrap transition-all ${
-                  selectedDifficulty === diff.name
-                    ? 'bg-green-600 text-white shadow-md'
-                    : `${diff.color} hover:bg-gray-100`
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        {/* Difficulty Tabs - Modern Pill Design */}
+        <div className="flex overflow-x-auto pb-4 gap-3 mb-8 no-scrollbar">
+          {difficulties.map((diff) => (
+            <button
+              key={diff.name}
+              onClick={() => {
+                setSelectedDifficulty(diff.name);
+                setCurrentPage(1);
+              }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 border ${selectedDifficulty === diff.name
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-lg transform scale-105'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                 }`}
-              >
-                {diff.name}
-              </button>
-            ))}
-          </div>
+            >
+              {/* Optional: Add icons based on diff */}
+              {selectedDifficulty === diff.name && <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></div>}
+              {diff.name}
+            </button>
+          ))}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Category Filter */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Code className="w-5 h-5" />
+          <aside className="lg:w-72 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
+              <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <BookmarkPlus className="w-5 h-5 text-indigo-500" />
                 Categories
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {categories.map((category) => (
                   <button
                     key={category}
@@ -185,182 +194,148 @@ const Problems = () => {
                       setSelectedCategory(category);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${
-                      selectedCategory === category
-                        ? 'bg-green-100 text-green-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`nav-item w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium flex items-center justify-between ${selectedCategory === category
+                        ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100' // Active state
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' // Inactive state
+                      }`}
                   >
                     {category}
+                    {selectedCategory === category && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>}
                   </button>
                 ))}
               </div>
             </div>
           </aside>
 
-          {/* Main Content - Problems Table */}
-          <main className="flex-1">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {/* Main Content - Problems List */}
+          <main className="flex-1 min-w-0">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b">
-                <div className="grid grid-cols-12 gap-4 font-semibold text-gray-700 text-sm">
-                  <div className="col-span-1">Status</div>
-                  <div className="col-span-5">Title</div>
-                  <div className="col-span-2">Category</div>
+              <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100 backdrop-blur-sm">
+                <div className="grid grid-cols-12 gap-6 font-semibold text-slate-500 text-xs uppercase tracking-wider">
+                  <div className="col-span-1 text-center">Status</div>
+                  <div className="col-span-6">Problem</div>
                   <div className="col-span-2">Difficulty</div>
-                  <div className="col-span-2 text-center">Acceptance</div>
+                  <div className="col-span-3 text-right">Acceptance</div>
                 </div>
               </div>
 
-              {/* Loading State */}
+              {/* Loading State Skeleton */}
               {loading ? (
-                <div className="divide-y">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="px-6 py-4 animate-pulse">
-                      <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-1">
-                          <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
-                        </div>
-                        <div className="col-span-5">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        </div>
-                        <div className="col-span-2">
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                        <div className="col-span-2">
-                          <div className="h-6 bg-gray-200 rounded w-16"></div>
-                        </div>
-                        <div className="col-span-2">
-                          <div className="h-4 bg-gray-200 rounded w-12 mx-auto"></div>
-                        </div>
+                <div className="divide-y divide-slate-100">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="px-6 py-5 animate-pulse">
+                      <div className="grid grid-cols-12 gap-6 items-center">
+                        <div className="col-span-1 flex justify-center"><div className="h-4 w-4 bg-slate-200 rounded-full"></div></div>
+                        <div className="col-span-6"><div className="h-5 bg-slate-200 rounded w-3/4 mb-2"></div><div className="h-3 bg-slate-100 rounded w-1/4"></div></div>
+                        <div className="col-span-2"><div className="h-6 bg-slate-200 rounded-full w-20"></div></div>
+                        <div className="col-span-3"><div className="h-4 bg-slate-200 rounded w-10 ml-auto"></div></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : problems.length === 0 ? (
-                <div className="text-center py-12">
-                  <Code className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No problems found</h3>
-                  <p className="text-gray-600">Try adjusting your filters or search term</p>
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-50 rounded-full mb-6 ring-1 ring-slate-100">
+                    <Search className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">No problems found</h3>
+                  <p className="text-slate-500">We couldn't find any problems matching your criteria.</p>
                 </div>
               ) : (
-                <>
-                  {/* Problems List */}
-                  <div className="divide-y">
-                    {problems.map((problem, idx) => (
-                      <Link
-                        key={problem._id}
-                        to={`/problems/${problem.slug}`}
-                        className="block px-6 py-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="grid grid-cols-12 gap-4 items-center">
-                          {/* Status */}
-                          <div className="col-span-1">
-                            {problem.solved ? (
-                              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              </div>
-                            ) : (
-                              <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                            )}
-                          </div>
+                <div className="divide-y divide-slate-100">
+                  {problems.map((problem) => (
+                    <Link
+                      key={problem._id}
+                      to={`/problems/${problem.slug}`}
+                      className="group block px-6 py-5 hover:bg-slate-50/80 transition-all duration-200 relative"
+                    >
+                      {/* Hover Indicator */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                          {/* Title */}
-                          <div className="col-span-5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 text-sm">{idx + 1 + (currentPage - 1) * 20}.</span>
-                              <span className="font-medium text-gray-900 hover:text-green-600">
-                                {problem.title}
-                              </span>
-                              {problem.isFeatured && (
-                                <Trophy className="w-4 h-4 text-yellow-500" />
-                              )}
+                      <div className="grid grid-cols-12 gap-6 items-center">
+                        {/* Status Icon */}
+                        <div className="col-span-1 flex justify-center">
+                          {problem.solved ? (
+                            <div className="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center ring-4 ring-emerald-50">
+                              <svg className="w-3.5 h-3.5" fill="none" strokeWidth="3" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
                             </div>
-                            {/* Company Tags */}
-                            {problem.companies && problem.companies.length > 0 && (
-                              <div className="flex gap-2 mt-1">
-                                {problem.companies.slice(0, 3).map((company, i) => (
-                                  <span key={i} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                    {company}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-200 group-hover:bg-slate-300 transition-colors"></div>
+                          )}
+                        </div>
 
-                          {/* Category */}
-                          <div className="col-span-2">
-                            <span className="text-sm text-gray-600">{problem.category}</span>
-                          </div>
-
-                          {/* Difficulty */}
-                          <div className="col-span-2">
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(problem.difficulty)}`}>
-                              {problem.difficulty}
+                        {/* Title & Meta */}
+                        <div className="col-span-6">
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-1.5 flex items-center gap-2">
+                            {problem.title}
+                            {problem.isFeatured && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Featured</span>}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-medium">
+                              {problem.category}
                             </span>
-                          </div>
-
-                          {/* Acceptance Rate */}
-                          <div className="col-span-2 text-center">
-                            {problem.stats && problem.stats.totalSubmissions > 0 ? (
-                              <span className="text-sm text-gray-600">
-                                {Math.round((problem.stats.successfulSubmissions / problem.stats.totalSubmissions) * 100)}%
+                            {problem.companies && problem.companies.length > 0 && (
+                              <span className="text-slate-400 truncate max-w-[200px]">
+                                Asked by {problem.companies.slice(0, 2).join(', ')}
                               </span>
-                            ) : (
-                              <span className="text-sm text-gray-400">N/A</span>
                             )}
                           </div>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t bg-gray-50">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Previous
-                        </button>
-                        
-                        <div className="flex gap-2">
-                          {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                            const pageNum = idx + 1;
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`px-4 py-2 rounded-md ${
-                                  currentPage === pageNum
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
+                        {/* Difficulty Badge */}
+                        <div className="col-span-2">
+                          <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold tracking-wide border ${problem.difficulty === 'Easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              problem.difficulty === 'Medium' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                problem.difficulty === 'Hard' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                  'bg-slate-50 text-slate-700 border-slate-200'
+                            }`}>
+                            {problem.difficulty}
+                          </span>
                         </div>
 
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                          disabled={currentPage === totalPages}
-                          className="px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Next
-                        </button>
+                        {/* Acceptance Rate */}
+                        <div className="col-span-3 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-bold text-slate-700">
+                              {problem.stats && problem.stats.totalSubmissions > 0 ? (
+                                Math.round((problem.stats.successfulSubmissions / problem.stats.totalSubmissions) * 100) + '%'
+                              ) : 'N/A'}
+                            </span>
+                            <span className="text-xs text-slate-400 font-medium">Acceptance</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
+
+            {/* Pagination Controls - Simplified and Modern */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <nav className="inline-flex shadow-sm rounded-lg bg-white p-1 ring-1 ring-slate-200">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <div className="px-4 py-2 text-sm font-medium text-slate-900 border-l border-r border-slate-100 flex items-center">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            )}
           </main>
         </div>
       </div>

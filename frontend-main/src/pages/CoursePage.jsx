@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import Navbar from "../components/Navbar";
-import { PlayCircle, FileText, BookOpen, ArrowLeft } from "lucide-react";
+import { PlayCircle, FileText, BookOpen, ArrowLeft, Video } from "lucide-react";
 
 function CoursePage() {
   const { id } = useParams();
@@ -17,8 +17,8 @@ function CoursePage() {
 
     // 1. Handle raw iframe code pasted by instructor
     if (url.includes("<iframe")) {
-        const match = url.match(/src="([^"]+)"/);
-        if (match && match[1]) return match[1];
+      const match = url.match(/src="([^"]+)"/);
+      if (match && match[1]) return match[1];
     }
 
     try {
@@ -34,12 +34,12 @@ function CoursePage() {
       }
       // 4. Handle already embedded
       else {
-        return url; 
+        return url;
       }
       // Return correct embed format
       return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
     } catch (e) {
-      return url; 
+      return url;
     }
   };
 
@@ -48,9 +48,9 @@ function CoursePage() {
       try {
         // Prevent fetching if ID is garbage (like HTML)
         if (!id || id.includes("<")) {
-             console.error("Invalid Course ID in URL");
-             navigate("/dashboard");
-             return;
+          console.error("Invalid Course ID in URL");
+          navigate("/dashboard");
+          return;
         }
 
         const res = await api.get(`/api/courses/${id}`);
@@ -82,104 +82,129 @@ function CoursePage() {
     );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-50 font-sans">
       <Navbar />
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden mt-[60px] lg:mt-0">
+
         {/* MAIN CONTENT AREA (Left) */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          
-          {/* Video Player Section */}
-          <div className="bg-black w-full aspect-video shrink-0 shadow-lg relative">
-            {activeChapter?.videoLink ? (
-              <iframe
-                src={getEmbedUrl(activeChapter.videoLink)}
-                className="w-full h-full"
-                title="Course Video"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              ></iframe>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-900">
-                <PlayCircle size={48} className="mb-2 opacity-50" />
-                <p>Select a chapter to begin learning</p>
-              </div>
-            )}
-          </div>
+        <div className="flex-1 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
 
-          {/* Reading Content Section */}
-          <div className="p-6 lg:p-10 max-w-5xl mx-auto w-full">
-            <div className="mb-6 border-b pb-4">
-              <h2 className="text-3xl font-bold text-gray-900">
-                {activeChapter?.chapterTitle || course.title}
-              </h2>
-            </div>
-
-            {activeChapter?.content ? (
-              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="text-xl font-semibold text-blue-700 flex items-center gap-2 mb-4">
-                  <BookOpen size={24} /> Reading Material & Notes
-                </h3>
-                <div className="prose prose-lg max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
-                  {activeChapter.content}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-dashed">
-                <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No reading material added for this lesson.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* SIDEBAR CURRICULUM (Right) */}
-        <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col shrink-0 h-[50vh] lg:h-auto overflow-hidden">
-          <div className="p-5 bg-gray-900 text-white border-b border-gray-800 flex justify-between items-center">
+          {/* Header Breadcrumb */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-2 sticky top-0 z-10 shadow-sm">
+            <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+              <ArrowLeft size={20} />
+            </button>
             <div>
-              <h3 className="font-bold text-lg">Course Content</h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {course.curriculum?.length || 0} Chapters
+              <h1 className="text-lg font-bold text-gray-900 leading-none truncate max-w-xl">{course.title}</h1>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">COURSE</span>
+                <span>•</span>
+                <span>{activeChapter?.chapterTitle || "Introduction"}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {course.curriculum?.map((chapter, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveChapter(chapter)}
-                className={`w-full text-left p-4 border-b border-gray-100 hover:bg-blue-50 transition flex gap-3 group ${
-                  activeChapter?._id === chapter._id
-                    ? "bg-blue-50 border-l-4 border-l-blue-600"
-                    : "border-l-4 border-l-transparent"
-                }`}
-              >
-                <div className="mt-0.5">
-                  {activeChapter?._id === chapter._id ? (
-                    <PlayCircle
-                      size={20}
-                      className="text-blue-600 fill-blue-100"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-gray-500 w-6 h-6 flex items-center justify-center border border-gray-300 rounded-full group-hover:border-blue-400 group-hover:text-blue-500">
-                      {index + 1}
-                    </span>
-                  )}
+          {/* Video Player Section */}
+          <div className="bg-black w-full shadow-2xl relative group">
+            <div className="aspect-video w-full max-h-[70vh] mx-auto bg-black">
+              {activeChapter?.videoLink ? (
+                <iframe
+                  src={getEmbedUrl(activeChapter.videoLink)}
+                  className="w-full h-full"
+                  title="Course Video"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                ></iframe>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-900/50 backdrop-blur-sm">
+                  <PlayCircle size={64} className="mb-4 opacity-30" />
+                  <p className="font-medium text-lg">Select a chapter to begin learning</p>
                 </div>
-                <div className="flex-1">
-                  <h4
-                    className={`text-sm font-medium leading-snug ${
-                      activeChapter?._id === chapter._id
-                        ? "text-blue-700"
-                        : "text-gray-700"
+              )}
+            </div>
+          </div>
+
+          {/* Reading Content Section */}
+          <div className="flex-1 bg-gray-50">
+            <div className="max-w-5xl mx-auto w-full p-6 lg:p-12">
+              <div className="flex items-start gap-4 mb-8">
+                <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-200 text-blue-600">
+                  <FileText size={32} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {activeChapter?.chapterTitle || "Select a Chapter"}
+                  </h2>
+                  <p className="text-gray-500">Reading Material & Notes</p>
+                </div>
+              </div>
+
+              {activeChapter?.content ? (
+                <article className="bg-white p-8 lg:p-12 rounded-2xl shadow-sm border border-gray-200 prose prose-slate prose-lg max-w-none prose-headings:font-bold prose-h2:text-blue-900 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl">
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    {activeChapter.content}
+                  </div>
+                </article>
+              ) : (
+                <div className="py-16 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                  <p className="text-lg font-medium">No reading material available for this lesson.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* SIDEBAR CURRICULUM (Right) */}
+        <div className="w-full lg:w-[400px] bg-white border-l border-gray-200 flex flex-col shrink-0 h-[40vh] lg:h-auto overflow-hidden shadow-xl z-20">
+          <div className="p-6 bg-gray-900 text-white flex justify-between items-end shadow-md">
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Course Content</p>
+              <h3 className="font-bold text-xl">{course.curriculum?.length || 0} Lessons</h3>
+            </div>
+            <div className="h-10 w-10 bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold border border-gray-700">
+              {Math.round(((course.curriculum?.indexOf(activeChapter) + 1) / course.curriculum?.length) * 100) || 0}%
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto bg-gray-50">
+            {course.curriculum?.map((chapter, index) => {
+              const isActive = activeChapter?._id === chapter._id;
+              return (
+                <button
+                  key={index}
+                  onClick={() => setActiveChapter(chapter)}
+                  className={`w-full text-left p-4 border-b border-gray-100 transition-all duration-200 flex gap-4 group hover:bg-white ${isActive
+                    ? "bg-white border-l-4 border-l-blue-600 shadow-sm"
+                    : "border-l-4 border-l-transparent opacity-80 hover:opacity-100"
                     }`}
-                  >
-                    {chapter.chapterTitle}
-                  </h4>
-                </div>
-              </button>
-            ))}
+                >
+                  <div className="mt-1 shrink-0">
+                    {isActive ? (
+                      <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                        <PlayCircle size={14} className="text-white" fill="white" />
+                      </div>
+                    ) : (
+                      <span className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-xs font-bold text-gray-500 bg-white group-hover:border-blue-400 group-hover:text-blue-500 transition-colors">
+                        {index + 1}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4
+                      className={`text-sm font-semibold leading-snug mb-1 truncate ${isActive ? "text-blue-700" : "text-gray-700 group-hover:text-gray-900"
+                        }`}
+                    >
+                      {chapter.chapterTitle}
+                    </h4>
+                    <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                      <Video size={10} /> Video Lesson
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

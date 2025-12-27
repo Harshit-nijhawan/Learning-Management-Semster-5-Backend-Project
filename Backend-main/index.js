@@ -66,9 +66,14 @@ app.use("/images", express.static("public/images"));
 
 // mongoose.connect("mongodb://127.0.0.1:27017/Students")
 
+const chatRoutes = require("./routes/chat.routes");
+const discussionRoutes = require("./routes/discussion.routes");
+
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
-app.use("/api/messages", message);
+app.use("/api/messages", message); // Contact Us messages
+app.use("/api/chat", chatRoutes); // Legacy/Private Chat
+app.use("/api/community", discussionRoutes); // New Discussion Board
 app.use("/api", courseRoutes);
 
 // GFG-style routes
@@ -96,3 +101,7 @@ app.listen(PORT, () => {
 app.get("/", (req, res) => {
   res.send({ status: "running", message: "Backend is active. Check console for DB errors." });
 });
+
+// Initialize Cron Jobs (Daily Question Scheduler)
+const initCronJobs = require('./services/scheduler.service');
+initCronJobs();

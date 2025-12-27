@@ -68,7 +68,7 @@ const enrollInCourse = async (req, res) => {
 const getEnrolledCourses = async (req, res) => {
   try {
     const userId = req.user._id;
-    console.log("Fetching courses for user:", userId);
+
 
     const student = await StudentModel.findById(userId).populate({
       path: "purchasedCourses",
@@ -77,7 +77,7 @@ const getEnrolledCourses = async (req, res) => {
         select: "name email",
       },
       // Ensure 'curriculum' is selected
-      select: "title description image price rating instructor curriculum" 
+      select: "title description image price rating instructor curriculum"
     });
 
     if (!student) {
@@ -134,6 +134,14 @@ const addPurchasedCourses = async (req, res) => {
     );
 
     student.purchasedCourses.push(...newCourses);
+
+    // Update studentsEnrolled count for each new course
+    if (newCourses.length > 0) {
+      await CourseModel.updateMany(
+        { _id: { $in: newCourses } },
+        { $inc: { studentsEnrolled: 1 } }
+      );
+    }
 
     // Fix: Proper ObjectId comparison for cart filtering
     student.cart = student.cart.filter(

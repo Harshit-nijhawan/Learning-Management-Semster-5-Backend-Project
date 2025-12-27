@@ -223,12 +223,14 @@ function ShowCourses() {
                       {course.studentsEnrolled} students enrolled
                     </div>
                   )}
-                  <button
-                    className="bg-blue-600 text-white px-5 py-2 mt-4 rounded-md w-full hover:bg-blue-700 transition duration-200 font-semibold"
-                    onClick={() => handleAddToCart(course)}
-                  >
-                    Add to cart
-                  </button>
+                  {(!user || user.role === "student") && (
+                    <button
+                      className="bg-blue-600 text-white px-5 py-2 mt-4 rounded-md w-full hover:bg-blue-700 transition duration-200 font-semibold"
+                      onClick={() => handleAddToCart(course)}
+                    >
+                      Add to cart
+                    </button>
+                  )}
                 </div>
               </div>
             ))

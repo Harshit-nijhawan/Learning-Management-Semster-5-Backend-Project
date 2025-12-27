@@ -29,6 +29,7 @@ import Articles from "./pages/Articles.jsx";
 import Problems from "./pages/Problems.jsx";
 import LearningPaths from "./pages/LearningPaths.jsx";
 import DailyQuestion from "./pages/DailyQuestion.jsx";
+import ProblemSolver from "./pages/ProblemSolver.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { token, isLoading } = useAuth();
@@ -51,9 +52,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// REMOVED: The static CoursesWrapper function was deleted because it prevented 
-// loading new courses from the database. The Route now points directly to CoursePage.
-
 function App() {
   return (
     <BrowserRouter>
@@ -75,7 +73,6 @@ function App() {
               }
             />
 
-            {/* UPDATED: Direct route to CoursePage for dynamic data fetching */}
             <Route path="/course/:id" element={<CoursePage />} />
 
             <Route
@@ -150,6 +147,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DailyQuestion />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/problems/:slug/solve"
+              element={
+                <ProtectedRoute>
+                  <ProblemSolver />
                 </ProtectedRoute>
               }
             />

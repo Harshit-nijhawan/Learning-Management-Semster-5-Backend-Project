@@ -58,6 +58,11 @@ const dailyQuestionSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  slug: {
+    type: String,
+    unique: true,
+    lowercase: true
+  },
   description: {
     type: String,
     required: true
@@ -146,6 +151,17 @@ dailyQuestionSchema.methods.updateAcceptanceRate = function () {
     this.acceptanceRate = ((this.totalAccepted / this.totalSubmissions) * 100).toFixed(2);
   }
 };
+
+// Auto-generate slug
+dailyQuestionSchema.pre('save', function (next) {
+  if (!this.slug || this.isModified('title')) {
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+  next();
+});
 
 const DailyQuestion = mongoose.model('DailyQuestion', dailyQuestionSchema);
 

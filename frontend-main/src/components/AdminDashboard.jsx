@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar, { SidebarItem } from "./Sidebar";
+import DiscussionBoard from "./DiscussionBoard";
 import {
   LayoutDashboard,
   LogOut,
@@ -9,7 +10,9 @@ import {
   CircleUser,
   DollarSign,
   FileText,
-  Code
+  Code,
+  MessageSquare,
+  Menu
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +34,22 @@ function AdminDashboard() {
   const [courseCount, setCourseCount] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const [problemCount, setProblemCount] = useState(0);
+
+  // Responsive Sidebar State
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Fetch students count
@@ -94,43 +113,49 @@ function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar>
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
         <SidebarItem
           icon={<LayoutDashboard size={20} />}
           text="Dashboard"
           active={activeSection === "dashboard"}
-          onClick={() => setActiveSection("dashboard")}
+          onClick={() => { setActiveSection("dashboard"); if (isMobile) setSidebarOpen(false); }}
         />
         <SidebarItem
           icon={<Users size={20} />}
           text="Students"
           active={activeSection === "students"}
-          onClick={() => setActiveSection("students")}
+          onClick={() => { setActiveSection("students"); if (isMobile) setSidebarOpen(false); }}
         />
         <SidebarItem
           icon={<GraduationCap size={20} />}
           text="Instructor"
           active={activeSection === "instructor"}
-          onClick={() => setActiveSection("instructor")}
+          onClick={() => { setActiveSection("instructor"); if (isMobile) setSidebarOpen(false); }}
         />
         <SidebarItem
           icon={<BookOpen size={20} />}
           text="Courses"
           active={activeSection === "courses"}
-          onClick={() => setActiveSection("courses")}
+          onClick={() => { setActiveSection("courses"); if (isMobile) setSidebarOpen(false); }}
         />
         <hr className="my-2 border-slate-700" />
         <SidebarItem
           icon={<FileText size={20} />}
           text="Articles"
           active={activeSection === "articles"}
-          onClick={() => setActiveSection("articles")}
+          onClick={() => { setActiveSection("articles"); if (isMobile) setSidebarOpen(false); }}
         />
         <SidebarItem
           icon={<Code size={20} />}
           text="Problems"
           active={activeSection === "problems"}
-          onClick={() => setActiveSection("problems")}
+          onClick={() => { setActiveSection("problems"); if (isMobile) setSidebarOpen(false); }}
+        />
+        <SidebarItem
+          icon={<MessageSquare size={20} />}
+          text="Community"
+          active={activeSection === "messages"}
+          onClick={() => { setActiveSection("messages"); if (isMobile) setSidebarOpen(false); }}
         />
         <hr className="my-2 border-slate-700" />
         <SidebarItem
@@ -141,6 +166,7 @@ function AdminDashboard() {
             if (userId) {
               navigate(`/user/${userId}`);
             }
+            if (isMobile) setSidebarOpen(false);
           }}
         />
         <SidebarItem
@@ -149,10 +175,29 @@ function AdminDashboard() {
           onClick={handleLogout}
         />
       </Sidebar>
-      <main className="flex-1 p-8 bg-gray-100 min-h-screen ml-64 transition-all">
+
+      {/* Mobile Menu Trigger */}
+      {!sidebarOpen && isMobile && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-20 p-2 bg-white rounded-lg shadow-md text-gray-700"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+
+      <main
+        className={`flex-1 p-8 bg-gray-50 min-h-screen transition-all duration-300
+           ${isMobile ? "ml-0" : (sidebarOpen ? "ml-64" : "ml-20")}
+         `}
+      >
         {activeSection === "dashboard" && (
           <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+            <div className="bg-gray-900 text-white p-8 rounded-3xl mb-10 shadow-xl">
+              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-gray-400">Platform overview and user management.</p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {dashData.map((data, index) => (
                 <DashCard
@@ -167,7 +212,7 @@ function AdminDashboard() {
           </>
         )}
 
-        {activeSection !== "dashboard" && (
+        {activeSection !== "dashboard" && activeSection !== "messages" && (
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 capitalize">{activeSection} Management</h1>
           </div>
@@ -179,6 +224,14 @@ function AdminDashboard() {
         {activeSection === "courses" && <div className="mt-6"><CourseList showEdit={false} /></div>}
         {activeSection === "articles" && <div className="mt-6"><AdminArticles /></div>}
         {activeSection === "problems" && <div className="mt-6"><AdminProblems /></div>}
+
+        {/* Messaging */}
+        {activeSection === "messages" && (
+          <div className="h-full">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 px-4">Admin Community</h2>
+            <DiscussionBoard currentUser={user} />
+          </div>
+        )}
       </main>
     </div>
   );

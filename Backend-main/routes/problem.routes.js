@@ -11,7 +11,8 @@ const {
   deleteProblem,
   submitSolution,
   toggleBookmarkProblem,
-  getProblemHint
+  getProblemHint,
+  runCode
 } = require("../controllers/problem.controller");
 
 // Public routes
@@ -44,6 +45,12 @@ router.post(
   "/problems/:id/submit",
   authMiddleware,
   submitSolution
+);
+
+router.post(
+  "/problems/:id/run",
+  authMiddleware,
+  runCode
 );
 
 router.post(
