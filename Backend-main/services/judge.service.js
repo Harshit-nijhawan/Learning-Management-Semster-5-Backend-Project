@@ -1,60 +1,85 @@
 const axios = require('axios');
 
-const JUDGE0_URL = process.env.JUDGE0_URL || 'http://localhost:2358';
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY;
-const JUDGE0_API_HOST = process.env.JUDGE0_API_HOST || 'judge0-ce.p.rapidapi.com';
+// Piston API URL (Free, public instance)
+const PISTON_API_URL = 'https://emkc.org/api/v2/piston/execute';
 
-// Language IDs mapping for Judge0
-const LANGUAGE_IDS = {
-    python: 71, // Python (3.8.1)
-    java: 62,   // Java (OpenJDK 13.0.1)
-    cpp: 54,    // C++ (GCC 9.2.0)
-    javascript: 63, // JavaScript (Node.js 12.14.0)
-    c: 50       // C (GCC 9.2.0)
+// Language Mapping: Judge0 ID -> Piston Language Name & Version
+const LANGUAGE_MAP = {
+    71: { language: 'python', version: '3.10.0' },      // Python
+    62: { language: 'java', version: '15.0.2' },        // Java
+    54: { language: 'c++', version: '10.2.0' },         // C++
+    63: { language: 'javascript', version: '18.15.0' }, // JavaScript (Node)
+    50: { language: 'c', version: '10.2.0' }            // C
 };
 
 /**
- * Execute code using Judge0
- * @param {string} sourceCode 
- * @param {string} language 
- * @param {string} stdin - Input for the program
- * @param {string} expectedOutput - Expected output to check against (optional)
+ * Execute code using Piston API (Free Alternative to Judge0)
+ * Adapts Piston's request/response to match Judge0's format to avoid breaking other files.
  */
 exports.executeCode = async (sourceCode, language, stdin, expectedOutput = null) => {
     try {
-        const languageId = LANGUAGE_IDS[language.toLowerCase()];
-        if (!languageId) throw new Error('Unsupported language');
+        // Map input language (string or id) to Piston config
+        // The controller sends specific strings "python", "java", etc.
+        // But we need to be robust. Let's use a standard map based on the string name.
 
-        const headers = { 'Content-Type': 'application/json' };
-
-        // Add RapidAPI Headers if API Key is present
-        if (JUDGE0_API_KEY) {
-            headers['X-RapidAPI-Key'] = JUDGE0_API_KEY;
-            headers['X-RapidAPI-Host'] = JUDGE0_API_HOST;
+        let pistonConfig = null;
+        switch (language.toLowerCase()) {
+            case 'python': pistonConfig = { language: 'python', version: '3.10.0' }; break;
+            case 'java': pistonConfig = { language: 'java', version: '15.0.2' }; break;
+            case 'cpp':
+            case 'c++': pistonConfig = { language: 'c++', version: '10.2.0' }; break;
+            case 'javascript':
+            case 'js': pistonConfig = { language: 'javascript', version: '18.15.0' }; break;
+            case 'c': pistonConfig = { language: 'c', version: '10.2.0' }; break;
+            default: throw new Error('Unsupported language');
         }
 
-        // Base64 encode code and input to avoid encoding issues
-        const options = {
-            method: 'POST',
-            url: `${JUDGE0_URL}/submissions`,
-            params: { base64_encoded: 'true', wait: 'true' },
-            headers: headers,
-            data: {
-                source_code: Buffer.from(sourceCode).toString('base64'),
-                language_id: languageId,
-                stdin: Buffer.from(stdin || "").toString('base64'),
-                expected_output: expectedOutput ? Buffer.from(expectedOutput).toString('base64') : null
-            }
+        const payload = {
+            language: pistonConfig.language,
+            version: pistonConfig.version,
+            files: [
+                {
+                    content: sourceCode
+                }
+            ],
+            stdin: stdin || "",
         };
 
-        const response = await axios.request(options);
-        return response.data;
+        const response = await axios.post(PISTON_API_URL, payload);
+        const data = response.data;
+
+        // Adapt Piston Response to Judge0 Format
+        // Piston returns: { run: { stdout: "...", stderr: "...", code: 0, signal: null } }
+        // Judge0 expects: { stdout: "...", stderr: "...", status: { id: 3, description: "Accepted" } } OR similar
+
+        const result = {
+            stdout: data.run.stdout,
+            stderr: data.run.stderr,
+            // Piston doesn't give specific verdicts like "Wrong Answer", we infer basic status
+            status: {
+                id: data.run.code === 0 ? 3 : 6, // 3 = Accepted (generic success), 6 = Error (generic)
+                description: data.run.code === 0 ? 'Accepted' : 'Runtime Error'
+            },
+            time: "0.1", // Piston doesn't always return time in same format, mock it
+            memory: "0"
+        };
+
+        // Simple manual verification if expected output is provided
+        if (expectedOutput && result.stdout) {
+            const cleanOutput = result.stdout.trim();
+            const cleanExpected = expectedOutput.trim();
+            if (cleanOutput !== cleanExpected) {
+                result.status.id = 4; // Wrong Answer
+                result.status.description = 'Wrong Answer';
+            }
+        }
+
+        return result;
+
     } catch (error) {
-        console.error('Judge0 Execution Error:', error.message);
-        // Improved error logging for RapidAPI issues
+        console.error('Execution Error:', error.message);
         if (error.response) {
             console.error('Data:', error.response.data);
-            console.error('Status:', error.response.status);
         }
         throw new Error('Code execution failed');
     }
@@ -62,22 +87,14 @@ exports.executeCode = async (sourceCode, language, stdin, expectedOutput = null)
 
 /**
  * Get verdict from status ID
- * @param {number} statusId 
+ * Kept for compatibility
  */
 exports.getVerdict = (statusId) => {
-    // Judge0 Status IDs:
-    // 3: Accepted
-    // 4: Wrong Answer
-    // 5: Time Limit Exceeded
-    // 6: Compilation Error
-    // 7-12: Runtime Error
     switch (statusId) {
         case 3: return 'Accepted';
         case 4: return 'Wrong Answer';
         case 5: return 'Time Limit Exceeded';
-        case 6: return 'Compilation Error';
-        default:
-            if (statusId >= 7 && statusId <= 12) return 'Runtime Error';
-            return 'Unknown Error';
+        case 6: return 'Compilation/Runtime Error';
+        default: return 'Unknown Error';
     }
 };
