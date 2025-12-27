@@ -3,6 +3,7 @@ const UserProgressModel = require("../models/UserProgress");
 const SubmissionModel = require("../models/Submission");
 const DailyQuestion = require("../models/DailyQuestion");
 const judgeService = require("../services/judge.service");
+const aiService = require("../services/ai.service");
 
 // Get all problems with filters
 const getProblems = async (req, res) => {
@@ -550,6 +551,27 @@ const getProblemHint = async (req, res) => {
     res.status(500).json({ message: "Error fetching hint" });
   }
 };
+// Generate AI Code Audit
+const getAiCodeReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, language } = req.body;
+
+    if (!code || !language) return res.status(400).json({ message: "Code and language required" });
+
+    // Use problem title for context if found, else generic
+    let problemTitle = "Coding Problem";
+    const problem = await ProblemModel.findById(id) || await DailyQuestion.findById(id);
+    if (problem) problemTitle = problem.title;
+
+    const audit = await aiService.generateCodeAudit(code, language, problemTitle);
+
+    res.json(audit);
+  } catch (error) {
+    console.error("AI Review Error:", error);
+    res.status(500).json({ message: "Error generating review" });
+  }
+};
 
 module.exports = {
   getProblems,
@@ -557,9 +579,10 @@ module.exports = {
   createProblem,
   updateProblem,
   deleteProblem,
-  runCode, // New endpoint
+  runCode,
   submitSolution,
   toggleBookmarkProblem,
-  getProblemHint
+  getProblemHint,
+  getAiCodeReview // New USP endpoint
 };
 

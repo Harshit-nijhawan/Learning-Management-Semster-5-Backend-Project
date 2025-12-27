@@ -12,7 +12,8 @@ const {
   submitSolution,
   toggleBookmarkProblem,
   getProblemHint,
-  runCode
+  runCode,
+  getAiCodeReview
 } = require("../controllers/problem.controller");
 
 // Public routes
@@ -63,6 +64,12 @@ router.get(
   "/problems/:id/hint",
   authMiddleware,
   getProblemHint
+);
+
+router.post(
+  "/problems/:id/audit",
+  authMiddleware,
+  getAiCodeReview
 );
 
 module.exports = router;

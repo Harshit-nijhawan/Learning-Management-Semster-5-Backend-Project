@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
-import { Play, Send, RefreshCw, Settings, Maximize2 } from "lucide-react";
+import { Play, Send, RefreshCw, Settings, Maximize2, Sparkles } from "lucide-react";
 
 // Language boilerplate/templates
 const BOILERPLATES = {
@@ -19,7 +19,9 @@ const CodeEditor = ({
     onRun,
     onSubmit,
     isRunning,
-    isSubmitting
+    isSubmitting,
+    onAudit,
+    isAuditing
 }) => {
     const editorRef = useRef(null);
     const [theme, setTheme] = useState("vs-dark");
@@ -106,11 +108,24 @@ const CodeEditor = ({
                 </div>
                 <div className="flex gap-3">
                     <button
+                        onClick={onAudit}
+                        disabled={isRunning || isSubmitting || isAuditing}
+                        className={`flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold transition-all border ${isAuditing
+                                ? "bg-purple-900/50 border-purple-500 text-purple-300 cursor-not-allowed"
+                                : "bg-purple-600 hover:bg-purple-500 text-white border-purple-500 shadow-lg hover:shadow-purple-900/20"
+                            }`}
+                        title="Get Senior Engineer Feedback"
+                    >
+                        <Sparkles size={16} className={isAuditing ? "animate-spin" : ""} />
+                        {isAuditing ? "Auditing..." : "Get Audit"}
+                    </button>
+
+                    <button
                         onClick={onRun}
                         disabled={isRunning || isSubmitting}
                         className={`flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold transition-all ${isRunning
-                                ? "bg-gray-600 cursor-not-allowed opacity-50"
-                                : "bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white border border-[#555]"
+                            ? "bg-gray-600 cursor-not-allowed opacity-50"
+                            : "bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white border border-[#555]"
                             }`}
                     >
                         <Play size={16} className={isRunning ? "animate-pulse" : ""} />
@@ -121,8 +136,8 @@ const CodeEditor = ({
                         onClick={onSubmit}
                         disabled={isRunning || isSubmitting}
                         className={`flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold transition-all shadow-lg hover:shadow-green-900/20 active:scale-95 ${isSubmitting
-                                ? "bg-green-700 cursor-not-allowed opacity-50"
-                                : "bg-green-600 hover:bg-green-500 text-white"
+                            ? "bg-green-700 cursor-not-allowed opacity-50"
+                            : "bg-green-600 hover:bg-green-500 text-white"
                             }`}
                     >
                         <Send size={16} />

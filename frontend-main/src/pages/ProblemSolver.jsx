@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Split from "react-split";  // Need to install react-split if not present, otherwise use simple flex
-import { ArrowLeft, CheckCircle, XCircle, AlertTriangle, Clock, Terminal } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, AlertTriangle, Clock, Terminal, Sparkles, ShieldCheck } from "lucide-react";
 import CodeEditor from "../components/CodeEditor";
 import api from "../utils/api";
 import Navbar from "../components/Navbar";
@@ -17,6 +17,8 @@ const ProblemSolver = () => {
     const [language, setLanguage] = useState("javascript");
     const [isRunning, setIsRunning] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAuditing, setIsAuditing] = useState(false);
+    const [auditResult, setAuditResult] = useState(null);
 
     // Output State
     const [output, setOutput] = useState(null);
@@ -79,6 +81,22 @@ const ProblemSolver = () => {
         }
     };
 
+    const handleAudit = async () => {
+        setIsAuditing(true);
+        setActiveTab("audit");
+        try {
+            const res = await api.post(`/api/problems/${problem._id || problem.slug}/audit`, {
+                code,
+                language
+            });
+            setAuditResult(res.data);
+        } catch (error) {
+            setAuditResult({ error: "Failed to generate audit. Please try again." });
+        } finally {
+            setIsAuditing(false);
+        }
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#1e1e1e] text-white">Loading IDE...</div>;
     if (!problem) return <div className="h-screen flex items-center justify-center text-white">Problem not found</div>;
 
@@ -117,16 +135,26 @@ const ProblemSolver = () => {
                             <Terminal size={14} className="inline mr-1.5" />
                             Output
                         </button>
+                        <button
+                            onClick={() => setActiveTab('audit')}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'audit'
+                                ? 'border-purple-500 text-purple-400'
+                                : 'border-transparent text-gray-400 hover:text-gray-300'
+                                }`}
+                        >
+                            <Sparkles size={14} />
+                            AI Audit
+                        </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-[#333]">
-                        {activeTab === 'description' ? (
+                        {activeTab === 'description' && (
                             <div className="prose prose-invert prose-sm max-w-none">
                                 <h2 className="text-xl font-bold mb-4">{problem.title}</h2>
                                 <div className="flex gap-2 mb-4">
                                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${problem.difficulty === 'Easy' ? 'bg-green-900/50 text-green-400' :
-                                            problem.difficulty === 'Medium' ? 'bg-yellow-900/50 text-yellow-400' :
-                                                'bg-red-900/50 text-red-400'
+                                        problem.difficulty === 'Medium' ? 'bg-yellow-900/50 text-yellow-400' :
+                                            'bg-red-900/50 text-red-400'
                                         }`}>{problem.difficulty}</span>
                                 </div>
 
@@ -149,7 +177,8 @@ const ProblemSolver = () => {
                                     </div>
                                 ))}
                             </div>
-                        ) : (
+                        )}
+                        {activeTab === 'output' && (
                             // Output / Result Panel
                             <div className="font-mono text-sm h-full">
                                 {!output && (
@@ -210,8 +239,8 @@ const ProblemSolver = () => {
                                 {output?.type === 'submit' && (
                                     <div className="animate-fade-in-up">
                                         <div className={`p-6 rounded-xl mb-6 text-center border ${output.data.verdict === 'Accepted'
-                                                ? 'bg-gradient-to-br from-green-900/30 to-green-800/10 border-green-700'
-                                                : 'bg-gradient-to-br from-red-900/30 to-red-800/10 border-red-700'
+                                            ? 'bg-gradient-to-br from-green-900/30 to-green-800/10 border-green-700'
+                                            : 'bg-gradient-to-br from-red-900/30 to-red-800/10 border-red-700'
                                             }`}>
                                             {output.data.verdict === 'Accepted' ? (
                                                 <CheckCircle size={48} className="mx-auto text-green-500 mb-2" />
@@ -260,6 +289,76 @@ const ProblemSolver = () => {
                                 )}
                             </div>
                         )}
+                        {activeTab === 'audit' && (
+                            // AI Audit Panel
+                            <div className="font-sans h-full">
+                                {!auditResult ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-60">
+                                        <ShieldCheck size={48} className="mb-4 text-purple-400" />
+                                        <p className="max-w-[200px] text-center">Get a Senior Engineer code review powered by Gemini AI</p>
+                                    </div>
+                                ) : auditResult.error ? (
+                                    <div className="p-4 bg-red-900/20 text-red-400 rounded-lg border border-red-800">
+                                        {auditResult.error}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6 animate-fade-in">
+                                        {/* Scorecard */}
+                                        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border border-gray-700 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Overall Grade</h3>
+                                                    <div className={`text-4xl font-black ${['A', 'A+'].includes(auditResult.grade) ? 'text-green-400' :
+                                                        ['B', 'B+'].includes(auditResult.grade) ? 'text-blue-400' :
+                                                            ['C', 'C+'].includes(auditResult.grade) ? 'text-yellow-400' :
+                                                                'text-red-400'
+                                                        }`}>{auditResult.grade}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Quality Score</h3>
+                                                    <div className="text-2xl font-bold text-white">{auditResult.qualityScore}/100</div>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-gray-300 text-sm leading-relaxed border-t border-gray-700 pt-3">
+                                                "{auditResult.feedback}"
+                                            </p>
+                                        </div>
+
+                                        {/* Complexity Analysis */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-[#2d2d2d] p-4 rounded-lg border border-[#444]">
+                                                <h4 className="text-xs text-gray-400 uppercase font-bold mb-2">Time Complexity</h4>
+                                                <code className="text-blue-400 font-mono text-sm block">{auditResult.timeComplexity}</code>
+                                            </div>
+                                            <div className="bg-[#2d2d2d] p-4 rounded-lg border border-[#444]">
+                                                <h4 className="text-xs text-gray-400 uppercase font-bold mb-2">Space Complexity</h4>
+                                                <code className="text-purple-400 font-mono text-sm block">{auditResult.spaceComplexity}</code>
+                                            </div>
+                                        </div>
+
+                                        {/* Suggestions */}
+                                        <div className="bg-[#2d2d2d] rounded-lg border border-[#444] overflow-hidden">
+                                            <div className="bg-[#333] px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                                Senior Engineer Feedback
+                                            </div>
+                                            <div className="p-4 space-y-3">
+                                                {auditResult.suggestions.map((suggestion, idx) => (
+                                                    <div key={idx} className="flex gap-3 text-sm text-gray-300">
+                                                        <span className="shrink-0 w-5 h-5 rounded-full bg-purple-900/50 text-purple-400 flex items-center justify-center text-xs font-bold border border-purple-800">
+                                                            {idx + 1}
+                                                        </span>
+                                                        <span>{suggestion}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -274,10 +373,12 @@ const ProblemSolver = () => {
                         onSubmit={handleSubmit}
                         isRunning={isRunning}
                         isSubmitting={isSubmitting}
+                        onAudit={handleAudit}
+                        isAuditing={isAuditing}
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
